@@ -1,0 +1,95 @@
+import React, { useState } from 'react';
+import {
+  ArrowDown, ArrowLeft, ArrowRight, ArrowUp, BookMarked, Columns2, FilePlus2, FileText, Grid2X2, Heading2,
+  Image as ImageIcon, Layers, Palette, Plus, Search, Trash2, Type, Upload, X
+} from 'lucide-react';
+import {
+  BACKGROUND_PATTERNS, FONT_CATALOG, FONT_CATEGORIES, FONT_COMPATIBILITY_COUNT,
+  LIST_STYLES, PAPER_SIZES, RESUME_KNOWLEDGE, SECTION_CATALOG
+} from './customizationData';
+
+function SectionControl({ section, enabled, onChange, onMove }) {
+  const directions = [
+    ['up', ArrowUp, 'up'], ['down', ArrowDown, 'down'],
+    ['left', ArrowLeft, 'to left column'], ['right', ArrowRight, 'to right column']
+  ];
+  return <div className={`section-toggle ${enabled ? 'enabled' : ''}`}><span className="drag-handle">⠿</span><span className="section-toggle-copy"><b>{section.name}</b><small>{section.benefit}</small></span><div className="section-toggle-actions">{directions.map(([direction, Icon, label]) => <button key={direction} type="button" disabled={!enabled} title={`Move ${section.name} ${label}`} aria-label={`Move ${section.name} ${label}`} onClick={() => onMove(section.name, direction)}><Icon size={11}/></button>)}<button aria-label={`${enabled ? 'Hide' : 'Add'} ${section.name}`} className={`tiny-toggle ${enabled ? 'on' : ''}`} onClick={() => onChange(!enabled)}><i /></button></div></div>;
+}
+
+function ColorControl({ label, value, onChange, note }) {
+  const commitHex = event => {
+    const next = event.target.value.trim();
+    if (/^#[0-9a-f]{6}$/i.test(next)) onChange(next);
+    else event.target.value = value;
+  };
+  return <label className="color-control"><span><b>{label}</b>{note && <small>{note}</small>}</span><input type="color" value={value} onChange={event => onChange(event.target.value)}/><input aria-label={`${label} hex value`} type="text" defaultValue={value.toUpperCase()} key={value} onBlur={commitHex} onKeyDown={event => { if (event.key === 'Enter') commitHex(event); }}/></label>;
+}
+
+export default function AdvancedCustomizerPanel({
+  open, onClose, tab, setTab, design, onDesignChange, sections, onToggleSection, onMoveSection,
+  selectedTemplate, layoutChoices, onUploadProfilePhoto, onRemoveProfilePhoto,
+  onUploadFont, onAddPage, onAddBlankPage, onAddDifferentPage, pageCount,
+  activePage, headerFooter, onToggleHeaderFooter, documentColumns, onCycleColumns,
+  onInsertTable, onInsertMultilevelList, pageDesignScope, onSetPageDesignScope
+}) {
+  const [fontSearch, setFontSearch] = useState('');
+  const [fontCategory, setFontCategory] = useState('all');
+  const [customFontName, setCustomFontName] = useState('');
+  const [sectionSearch, setSectionSearch] = useState('');
+  const [knowledgeSearch, setKnowledgeSearch] = useState('');
+  const filteredFonts = FONT_CATALOG.filter(name => {
+    const categoryMatch = fontCategory === 'all' || FONT_CATEGORIES.find(category => category.id === fontCategory)?.families.includes(name);
+    return categoryMatch && name.toLowerCase().includes(fontSearch.trim().toLowerCase());
+  });
+  const fontOptions = [...new Set([design.font, design.headingFont, ...filteredFonts])];
+  const filteredSections = SECTION_CATALOG.filter(section => [section.name, section.category, section.benefit].some(value => value.toLowerCase().includes(sectionSearch.trim().toLowerCase())));
+  const filteredKnowledge = RESUME_KNOWLEDGE.filter(item => [item.category, item.title, item.guidance].some(value => value.toLowerCase().includes(knowledgeSearch.trim().toLowerCase())));
+  const activeList = LIST_STYLES.find(item => item.id === design.listStyle) || LIST_STYLES[0];
+  const addCustomFontName = () => {
+    const name = customFontName.trim();
+    if (!name) return;
+    onDesignChange('font', name);
+    onDesignChange('headingFont', name);
+    setCustomFontName('');
+  };
+
+  return (
+    <aside className={`customizer-panel side-panel ${open ? 'open' : ''}`}>
+      <div className="side-panel-head compact"><div><span className="panel-kicker">CUSTOMIZE EVERYTHING</span><h2>Design studio</h2></div><button className="mobile-close" onClick={onClose}><X size={18}/></button></div>
+      <div className="custom-tabs">
+        <button className={tab === 'design' ? 'active' : ''} onClick={() => setTab('design')}><Palette size={15}/>Design</button>
+        <button className={tab === 'typography' ? 'active' : ''} onClick={() => setTab('typography')}><Type size={15}/>Type</button>
+        <button className={tab === 'layout' ? 'active' : ''} onClick={() => setTab('layout')}><Columns2 size={15}/>Layout</button>
+        <button className={tab === 'content' ? 'active' : ''} onClick={() => setTab('content')}><BookMarked size={15}/>Content</button>
+      </div>
+      <div className="custom-body">
+        {tab === 'design' && <>
+          <div className="control-section"><div className="control-title"><span>Color system</span><small>16.7M colors per picker</small></div><div className="color-control-list"><ColorControl label="Primary accent" value={design.accent} onChange={value => onDesignChange('accent', value)}/><ColorControl label="Secondary accent" value={design.secondaryAccent} onChange={value => onDesignChange('secondaryAccent', value)}/><ColorControl label="Body text" value={design.textColor} onChange={value => onDesignChange('textColor', value)}/><ColorControl label="Headings" value={design.headingColor} onChange={value => onDesignChange('headingColor', value)}/><ColorControl label="Page background" value={design.pageBackground} onChange={value => onDesignChange('pageBackground', value)}/><ColorControl label="Highlight" value={design.highlightColor} onChange={value => onDesignChange('highlightColor', value)}/></div></div>
+          <div className="control-section"><div className="control-title"><span>Background patterns</span><small>{BACKGROUND_PATTERNS.length} systems</small></div><div className="pattern-grid">{BACKGROUND_PATTERNS.map(pattern => <button key={pattern.id} className={`pattern-swatch pattern-${pattern.id} ${design.pattern === pattern.id ? 'active' : ''}`} onClick={() => onDesignChange('pattern', pattern.id)}><i/><span>{pattern.label}</span></button>)}</div></div>
+          {selectedTemplate?.photo && <div className="control-section profile-photo-control"><div className="control-title"><span>Profile photo</span><small>Embedded in output</small></div><div className="photo-actions"><button onClick={onUploadProfilePhoto}><ImageIcon size={15}/>Attach or replace</button><button onClick={onRemoveProfilePhoto}><Trash2 size={14}/>Hide</button></div><label className="range-label"><span>Profile size</span><strong>{design.profileImageSize}px</strong><input type="range" min="40" max="180" value={design.profileImageSize} onChange={event => onDesignChange('profileImageSize', Number(event.target.value))}/></label></div>}
+        </>}
+
+        {tab === 'typography' && <>
+          <div className="control-section font-universe"><div className="control-title"><span>Font universe</span><small>{FONT_COMPATIBILITY_COUNT.toLocaleString()}+ compatible</small></div><p className="control-hint">Choose a curated family name, enter any installed font name, or upload a licensed TTF, OTF, WOFF, or WOFF2 file.</p><div className="search-field compact-search"><Search size={14}/><input aria-label="Search fonts" value={fontSearch} onChange={event => setFontSearch(event.target.value)} placeholder={`Search ${FONT_CATALOG.length} curated families`}/></div><div className="font-category-strip"><button className={fontCategory === 'all' ? 'active' : ''} onClick={() => setFontCategory('all')}>All</button>{FONT_CATEGORIES.map(category => <button key={category.id} className={fontCategory === category.id ? 'active' : ''} onClick={() => setFontCategory(category.id)}>{category.label}</button>)}</div><label className="field-label">Body font<select aria-label="Body font" value={design.font} onChange={event => onDesignChange('font', event.target.value)}>{fontOptions.map(item => <option key={item}>{item}</option>)}</select></label><label className="field-label">Heading font<select aria-label="Heading font" value={design.headingFont} onChange={event => onDesignChange('headingFont', event.target.value)}>{fontOptions.map(item => <option key={item}>{item}</option>)}</select></label><div className="custom-font-row"><input aria-label="Installed font family name" value={customFontName} onChange={event => setCustomFontName(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') addCustomFontName(); }} placeholder="Enter any installed font name"/><button onClick={addCustomFontName}>Use</button></div><button className="upload-font-button" onClick={onUploadFont}><Upload size={15}/>Upload custom font file</button></div>
+          <div className="control-section"><div className="control-title"><span>Type metrics</span><small>Document level</small></div><label className="range-label"><span>Base font size</span><strong>{design.baseFontSize}px</strong><input type="range" min="6" max="32" step="0.5" value={design.baseFontSize} onChange={event => onDesignChange('baseFontSize', Number(event.target.value))}/></label><label className="range-label"><span>Heading scale</span><strong>{design.headingScale}%</strong><input type="range" min="70" max="180" value={design.headingScale} onChange={event => onDesignChange('headingScale', Number(event.target.value))}/></label><label className="range-label"><span>Font weight</span><strong>{design.fontWeight}</strong><input type="range" min="300" max="800" step="100" value={design.fontWeight} onChange={event => onDesignChange('fontWeight', Number(event.target.value))}/></label><label className="range-label"><span>Line height</span><strong>{design.lineHeight.toFixed(2)}</strong><input type="range" min="0.9" max="2.4" step="0.05" value={design.lineHeight} onChange={event => onDesignChange('lineHeight', Number(event.target.value))}/></label><label className="range-label"><span>Letter spacing</span><strong>{design.letterSpacing}px</strong><input type="range" min="-1" max="6" step="0.1" value={design.letterSpacing} onChange={event => onDesignChange('letterSpacing', Number(event.target.value))}/></label><label className="range-label"><span>Word spacing</span><strong>{design.wordSpacing}px</strong><input type="range" min="-2" max="12" step="0.5" value={design.wordSpacing} onChange={event => onDesignChange('wordSpacing', Number(event.target.value))}/></label><label className="range-label"><span>Paragraph spacing</span><strong>{design.paragraphSpacing}px</strong><input type="range" min="0" max="32" value={design.paragraphSpacing} onChange={event => onDesignChange('paragraphSpacing', Number(event.target.value))}/></label></div>
+          <div className="control-section"><div className="control-title"><span>Paragraph flow</span></div><div className="segmented-control four"><button className={design.textAlignment === 'left' ? 'active' : ''} onClick={() => onDesignChange('textAlignment', 'left')}>Left</button><button className={design.textAlignment === 'center' ? 'active' : ''} onClick={() => onDesignChange('textAlignment', 'center')}>Center</button><button className={design.textAlignment === 'right' ? 'active' : ''} onClick={() => onDesignChange('textAlignment', 'right')}>Right</button><button className={design.textAlignment === 'justify' ? 'active' : ''} onClick={() => onDesignChange('textAlignment', 'justify')}>Justify</button></div><div className="segmented-control"><button className={design.textDirection === 'ltr' ? 'active' : ''} onClick={() => onDesignChange('textDirection', 'ltr')}>LTR</button><button className={design.textDirection === 'rtl' ? 'active' : ''} onClick={() => onDesignChange('textDirection', 'rtl')}>RTL</button></div></div>
+          <div className="control-section"><div className="control-title"><span>Bullets, numbering & multilevel</span><small>{LIST_STYLES.length} styles</small></div><div className="list-style-grid">{LIST_STYLES.map(style => <button key={style.id} title={style.label} className={design.listStyle === style.id ? 'active' : ''} onClick={() => onDesignChange('listStyle', style.id)}><i>{style.preview}</i><span>{style.label}</span></button>)}</div>{activeList.kind === 'multilevel' && <button className="insert-multilevel" onClick={() => onInsertMultilevelList(activeList)}><Layers size={15}/>Insert {activeList.label} list</button>}</div>
+        </>}
+
+        {tab === 'layout' && <>
+          <div className="control-section"><div className="control-title"><span>Design scope</span><small>Page {activePage + 1}</small></div><div className="segmented-control"><button className={pageDesignScope === 'all' ? 'active' : ''} onClick={() => onSetPageDesignScope('all')}>All pages</button><button className={pageDesignScope === 'page' ? 'active' : ''} onClick={() => onSetPageDesignScope('page')}>This page only</button></div><p className="control-hint">Use page-only mode to give the current page a different template, color, pattern, font, or layout.</p></div>
+          <div className="control-section"><div className="control-title"><span>Page architecture</span><small>{selectedTemplate?.groupName || 'Resume'}</small></div><div className="layout-options">{layoutChoices.map(item => <button key={item} className={design.layout === item ? 'active' : ''} onClick={() => onDesignChange('layout', item)}><span className={`layout-icon ${item}`}><i/><i/></span>{item}</button>)}</div></div>
+          <div className="control-section"><div className="control-title"><span>Page format & spacing</span></div><label className="range-label"><span>Margins</span><strong>{design.margins} mm</strong><input type="range" min="5" max="40" value={design.margins} onChange={event => onDesignChange('margins', Number(event.target.value))}/></label><label className="field-label">Paper size<select aria-label="Paper size" value={design.paperSize} onChange={event => onDesignChange('paperSize', event.target.value)}>{PAPER_SIZES.map(size => <option key={size.id} value={size.id}>{size.label}</option>)}</select></label></div>
+          <div className="control-section"><div className="control-title"><span>Images & text wrap</span><small>Inline visuals</small></div><label className="range-label"><span>Image width</span><strong>{design.imageSize}px</strong><input type="range" min="40" max="600" value={design.imageSize} onChange={event => onDesignChange('imageSize', Number(event.target.value))}/></label><label className="range-label"><span>Corner radius</span><strong>{design.imageRadius}px</strong><input type="range" min="0" max="80" value={design.imageRadius} onChange={event => onDesignChange('imageRadius', Number(event.target.value))}/></label><label className="range-label"><span>Border width</span><strong>{design.imageBorderWidth}px</strong><input type="range" min="0" max="12" value={design.imageBorderWidth} onChange={event => onDesignChange('imageBorderWidth', Number(event.target.value))}/></label><label className="range-label"><span>Brightness</span><strong>{design.imageBrightness}%</strong><input type="range" min="25" max="175" value={design.imageBrightness} onChange={event => onDesignChange('imageBrightness', Number(event.target.value))}/></label><label className="range-label"><span>Contrast</span><strong>{design.imageContrast}%</strong><input type="range" min="25" max="175" value={design.imageContrast} onChange={event => onDesignChange('imageContrast', Number(event.target.value))}/></label><div className="segmented-control four"><button className={design.imageWrap === 'inline' ? 'active' : ''} onClick={() => onDesignChange('imageWrap', 'inline')}>Inline</button><button className={design.imageWrap === 'left' ? 'active' : ''} onClick={() => onDesignChange('imageWrap', 'left')}>Wrap left</button><button className={design.imageWrap === 'right' ? 'active' : ''} onClick={() => onDesignChange('imageWrap', 'right')}>Wrap right</button><button className={design.imageWrap === 'full' ? 'active' : ''} onClick={() => onDesignChange('imageWrap', 'full')}>Full width</button></div></div>
+          <div className="control-section"><div className="control-title"><span>Pages</span><small>{pageCount} page{pageCount === 1 ? '' : 's'}</small></div><button className="action-row" onClick={onAddPage}><span><FilePlus2 size={16}/>Continuation page</span><small>Same design</small></button><button className="action-row" onClick={onAddBlankPage}><span><FileText size={16}/>Blank page</span><small>Same design</small></button><button className="action-row" onClick={onAddDifferentPage}><span><Layers size={16}/>Blank page with different design</span><small>Independent</small></button></div>
+          <div className="control-section"><div className="control-title"><span>Document options</span></div><button className="action-row" onClick={onToggleHeaderFooter}><span><Heading2 size={16}/>Header & footer</span><small>{headerFooter ? 'On' : 'Off'}</small></button><button className="action-row" onClick={onCycleColumns}><span><Columns2 size={16}/>Content columns</span><small>{documentColumns} column{documentColumns === 1 ? '' : 's'}</small></button><button className="action-row" onClick={onInsertTable}><span><Grid2X2 size={16}/>Insert editable table</span><Plus size={14}/></button></div>
+        </>}
+
+        {tab === 'content' && <>
+          <div className="control-section section-library"><div className="control-title"><span>Section library</span><small>{Object.values(sections).filter(Boolean).length} active · {SECTION_CATALOG.length} total</small></div><p className="control-hint section-move-hint">Move enabled sections up/down or between the left and right columns. On the resume page, use the section arrows or drag handle to place a whole section anywhere.</p><div className="search-field compact-search"><Search size={14}/><input aria-label="Search resume sections" value={sectionSearch} onChange={event => setSectionSearch(event.target.value)} placeholder="Search sections, purpose, or category"/></div><div className="section-results">{filteredSections.map(section => <SectionControl key={section.name} section={section} enabled={Boolean(sections[section.name])} onChange={value => onToggleSection(section.name, value)} onMove={onMoveSection}/>)}</div></div>
+          <div className="control-section knowledge-library"><div className="control-title"><span>Resume knowledge base</span><small>{RESUME_KNOWLEDGE.length} research notes</small></div><p className="control-hint">Stored guidance is always available. Optional AI tools live in Career copilot and run only when you request them.</p><div className="search-field compact-search"><Search size={14}/><input aria-label="Search resume knowledge" value={knowledgeSearch} onChange={event => setKnowledgeSearch(event.target.value)} placeholder="Search structure, ATS, pages, content"/></div>{filteredKnowledge.map(item => <article key={item.title}><span>{item.category}</span><strong>{item.title}</strong><p>{item.guidance}</p><a href={item.source} target="_blank" rel="noreferrer">Research source</a></article>)}</div>
+        </>}
+      </div>
+    </aside>
+  );
+}
