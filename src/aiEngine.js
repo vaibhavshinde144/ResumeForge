@@ -1,10 +1,13 @@
+import { callFreeAI } from './freeAIEngine';
+
 const OPENAI_ENDPOINT = 'https://api.openai.com/v1/responses';
 const GEMINI_ENDPOINT = model => `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
 
 export const AI_PROVIDERS = [
-  { id: 'openai', label: 'OpenAI', model: 'gpt-5.6-sol', endpoint: OPENAI_ENDPOINT, keyLabel: 'OpenAI API key', supportsResearch: true },
-  { id: 'gemini', label: 'Google Gemini', model: 'gemini-3.6-flash', endpoint: '', keyLabel: 'Gemini API key', supportsResearch: true },
-  { id: 'compatible', label: 'Compatible / local', model: '', endpoint: 'http://localhost:11434/v1/chat/completions', keyLabel: 'API key (optional locally)', supportsResearch: false },
+  { id: 'free', label: 'ResumeForge Free AI', model: 'On-device Career Engine 1.0', endpoint: '', keyLabel: 'No API key required', supportsResearch: false, requiresKey: false, local: true },
+  { id: 'openai', label: 'OpenAI', model: 'gpt-5.6-sol', endpoint: OPENAI_ENDPOINT, keyLabel: 'OpenAI API key', supportsResearch: true, requiresKey: true },
+  { id: 'gemini', label: 'Google Gemini', model: 'gemini-3.6-flash', endpoint: '', keyLabel: 'Gemini API key', supportsResearch: true, requiresKey: true },
+  { id: 'compatible', label: 'Compatible / local', model: '', endpoint: 'http://localhost:11434/v1/chat/completions', keyLabel: 'API key (optional locally)', supportsResearch: false, requiresKey: false },
 ];
 
 export const AI_TASKS = {
@@ -214,6 +217,7 @@ async function callCompatible(config, prompt, signal) {
 }
 
 export async function callAIProvider(config, request, signal) {
+  if (config.provider === 'free') return callFreeAI(request, signal);
   const prompt = typeof request === 'string' ? request : buildTaskPrompt(request);
   if (config.provider === 'gemini') return callGemini(config, prompt, signal);
   if (config.provider === 'compatible') return callCompatible(config, prompt, signal);
@@ -267,7 +271,7 @@ export function buildAIResumeMarkup(data, { photoUrl = '' } = {}) {
   const contact = [data.profile.email, data.profile.phone, data.profile.location, ...data.profile.links].filter(Boolean);
   let sectionNumber = 1;
   const experience = data.experience.length ? `<section class="resume-section" data-section-name="Experience">${sectionHeading('Experience', sectionNumber++)}${data.experience.map(item => `<article class="job"><div class="job-top"><div><h3 contenteditable="true">${escapeHtml(item.role)}</h3><p contenteditable="true">${escapeHtml([item.company, item.location].filter(Boolean).join(' · '))}</p></div><time contenteditable="true">${escapeHtml(item.dates)}</time></div>${listMarkup(item.bullets)}</article>`).join('')}</section>` : '';
-  const projects = data.projects.length ? `<section class="resume-section" data-section-name="Projects">${sectionHeading('Projects', sectionNumber++)}${data.projects.map(item => `<article class="job"><div class="project-row" contenteditable="true"><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.subtitle)}</span></div>${listMarkup(item.bullets)}</article>`).join('')}</section>` : '';
+  const projects = data.projects.length ? `<section class="resume-section" data-section-name="Projects">${sectionHeading('Projects', sectionNumber++)}${data.projects.map(item => `<article class="project-entry"><div class="project-row" contenteditable="true"><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.subtitle)}</span></div>${item.bullets.length ? `<div class="project-details" data-project-details="true" contenteditable="true">${listMarkup(item.bullets)}</div>` : ''}</article>`).join('')}</section>` : '';
   const awards = data.awards.length ? `<section class="resume-section" data-section-name="Awards">${sectionHeading('Awards', sectionNumber++)}${data.awards.map(item => `<div class="project-row" contenteditable="true"><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml([item.issuer, item.date].filter(Boolean).join(' · '))}</span></div>`).join('')}</section>` : '';
   const education = data.education.length ? `<section class="resume-section" data-section-name="Education">${sectionHeading('Education', sectionNumber++)}${data.education.map(item => `<div class="education" contenteditable="true"><strong>${escapeHtml(item.qualification)}</strong><span>${escapeHtml([item.institution, item.location].filter(Boolean).join(' · '))}</span><small>${escapeHtml(item.dates)}</small>${listMarkup(item.details)}</div>`).join('')}</section>` : '';
   const certifications = data.certifications.length ? `<section class="resume-section" data-section-name="Certifications">${sectionHeading('Certifications', sectionNumber++)}${data.certifications.map(item => `<div class="education" contenteditable="true"><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.issuer)}</span><small>${escapeHtml(item.date)}</small></div>`).join('')}</section>` : '';

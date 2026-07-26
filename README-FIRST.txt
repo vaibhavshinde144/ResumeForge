@@ -54,16 +54,17 @@ the supplied 21-section CSV.
 
 AI COPILOT
 ----------
-Open a resume and select AI Copilot. It can draft a complete resume from verified facts,
-write any of the 60 sections, correct grammar, provide prioritized suggestions, answer
-focused questions, and optionally use provider-supported live web research. Every change
-is previewed and requires Apply before it replaces resume content.
+Open a resume and select AI Copilot. ResumeForge Free AI is ready immediately: no account,
+API key, payment, quota, or internet request. It can draft a complete resume from verified
+facts, write any of the 60 sections, correct common grammar issues, provide prioritized
+suggestions, answer focused career questions, and guide ATS improvements. Every change is
+previewed and requires Apply before it replaces resume content.
 
-Use Connect to choose OpenAI, Google Gemini, or a compatible/local provider. API keys are
-held only in memory for the current tab; they are not saved with the resume or embedded
-in exports. Never put a key into this folder or publish one to GitHub. Public deployments
-should use an authenticated server-side proxy. Provider usage and web research may cost
-money according to the selected provider.
+Use Connect only to optionally choose OpenAI, Google Gemini, or a compatible/local provider
+for larger models or live web research. API keys are held only in memory for the current
+tab; they are not saved with the resume or embedded in exports. Never put a key into this
+folder or publish one to GitHub. Public deployments should use an authenticated server-side
+proxy. Connected-provider usage and web research may cost money.
 
 The ATS preflight runs locally without an API key. It checks contact details, core
 sections, measurable evidence, readability, structure, and target-job keywords. It is a
@@ -82,10 +83,11 @@ Pages deployment workflow. Developers can run:
   npm test
   npm run dev
 
-The included automated suite contains 7,612 tests, including 5,000 generated import
+The included automated suite contains 7,627 tests, including 5,000 generated import
 integrity/mapping cases, 1,024 combinatorial whole-section movement cases, and 500
 repeatable-section add/remove cases across every section definition and item structure, plus
-project-specific migration, multiline detail, save, and export coverage. It also
+project-specific migration, multiline detail, save, and export coverage and 15 focused
+free-AI tests. It also
 covers the reported typing/autosave regression, upload/review/template switching, positive
 and negative workflows, edge cases, provider errors, injection safety, ATS accuracy bounds,
 performance, responsive layouts, seven requested career domains, and all nine export

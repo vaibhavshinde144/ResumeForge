@@ -413,32 +413,27 @@ describe('ResumeForge complete experience', () => {
     expect(screen.getByText(/Keyword coverage/i)).toBeInTheDocument();
   });
 
-  it('generates and applies a complete AI resume only after explicit review', async () => {
-    const generated = JSON.stringify({
-      profile: { name: 'Priya Sharma', headline: 'Data Analyst', email: 'priya@example.com', phone: '+91 9876543210', location: 'Pune, India', links: ['linkedin.com/in/priya'] },
-      summary: 'Data analyst who turns complex information into clear decisions.',
-      skills: ['SQL', 'Power BI'],
-      experience: [{ role: 'Data Analyst', company: 'Acme', location: 'Pune', dates: '2023–Present', bullets: ['Reduced reporting time by 30%.'] }],
-      education: [{ qualification: 'B.Sc. Statistics', institution: 'Pune University', dates: '2023', details: [] }],
-      projects: [], certifications: [], awards: [], languages: ['English'], additionalSections: []
-    });
-    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, json: async () => ({ model: 'gpt-5.6-sol', output: [{ content: [{ type: 'output_text', text: generated }] }] }) })));
+  it('generates and applies a complete free AI resume only after explicit review', async () => {
     const user = userEvent.setup();
     const { container } = render(<App />);
     await openEditor(user);
     await user.click(screen.getByRole('button', { name: /AI Copilot/i }));
     await user.click(screen.getByRole('tab', { name: /Connect/i }));
-    fireEvent.change(screen.getByLabelText('AI API key'), { target: { value: 'session-test-key' } });
+    expect(screen.getByText('No key, account, billing, or network request')).toBeInTheDocument();
+    expect(screen.queryByLabelText('AI API key')).not.toBeInTheDocument();
+    expect(screen.getByText('Free AI is ready on this device')).toBeInTheDocument();
     await user.click(screen.getByRole('tab', { name: /Create/i }));
     fireEvent.change(screen.getByLabelText('Full name'), { target: { value: 'Priya Sharma' } });
     fireEvent.change(screen.getByLabelText('Target role'), { target: { value: 'Data Analyst' } });
+    fireEvent.change(screen.getByLabelText(/Career history/i), { target: { value: 'Data Analyst | Acme | Pune | 2023–Present\nReduced reporting time by 30%' } });
+    fireEvent.change(screen.getByLabelText('Skills'), { target: { value: 'SQL, Power BI' } });
     await user.click(screen.getByRole('button', { name: /Generate complete resume/i }));
     expect(container.querySelector('.resume-page h1')).toHaveTextContent('Ananya Rao');
     const apply = await screen.findByRole('button', { name: /Apply complete resume/i });
     await user.click(apply);
     expect(container.querySelector('.resume-page h1')).toHaveTextContent('Priya Sharma');
     expect(container.querySelector('[data-section-name="Experience"]')).toHaveTextContent('Reduced reporting time by 30%');
-    expect(JSON.stringify(window.localStorage)).not.toContain('session-test-key');
+    expect(container.querySelector('[data-section-name="Skills"]')).toHaveTextContent('Power BI');
     await user.click(screen.getByRole('button', { name: /Undo last applied AI change/i }));
     expect(container.querySelector('.resume-page h1')).toHaveTextContent('Ananya Rao');
   });
