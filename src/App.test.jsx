@@ -270,11 +270,36 @@ describe('ResumeForge complete experience', () => {
     expect([...experience.parentElement.children].indexOf(projects)).toBeLessThan([...experience.parentElement.children].indexOf(experience));
     expect(projects).toHaveTextContent('Pulse Insights');
 
+    expect(container.querySelector('[aria-label="Add Summary item"]')).not.toBeInTheDocument();
+    let addExperience = container.querySelector('[aria-label="Add Experience item"]');
+    await user.click(addExperience);
+    await waitFor(() => {
+      const currentExperience = [...container.querySelectorAll('.resume-section')].find(section => section.querySelector('h2')?.textContent === 'Experience');
+      expect(currentExperience.querySelectorAll(':scope > .job')).toHaveLength(3);
+      expect(currentExperience).toHaveTextContent('New role');
+    });
+    let removeExperience = container.querySelector('[aria-label="Remove Experience item 3"]');
+    await user.click(removeExperience);
+    await waitFor(() => {
+      const currentExperience = [...container.querySelectorAll('.resume-section')].find(section => section.querySelector('h2')?.textContent === 'Experience');
+      expect(currentExperience.querySelectorAll(':scope > .job')).toHaveLength(2);
+      expect(currentExperience).not.toHaveTextContent('New role');
+    });
+
+    const skillsBefore = [...container.querySelectorAll('.resume-section')].find(section => section.querySelector('h2')?.textContent === 'Skills');
+    expect(skillsBefore.querySelectorAll(':scope > .skill-list > span')).toHaveLength(6);
+    await user.click(container.querySelector('[aria-label="Add Skills item"]'));
+    await waitFor(() => expect(container.querySelectorAll('.skill-list > span')).toHaveLength(7));
+    await user.click(container.querySelector('[aria-label="Remove Skills item 7"]'));
+    await waitFor(() => expect(container.querySelectorAll('.skill-list > span')).toHaveLength(6));
+
     await user.click(screen.getByRole('button', { name: /^Save$/ }));
     const saved = window.localStorage.getItem('resumeforge-saves');
     expect(saved).toContain('Pulse Insights');
     expect(saved).not.toContain('data-editor-ui');
     expect(saved).not.toContain('section-move-toolbar');
+    expect(saved).not.toContain('item-remove-button');
+    expect(saved).not.toContain('data-item-editable');
   });
 
   it('provides the font universe, exact type controls, and 36 list systems', async () => {
