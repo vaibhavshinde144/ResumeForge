@@ -41,6 +41,7 @@ Open the local URL printed by Vite. Use `npm run build` to create a production b
 - A searchable, source-linked resume research library
 - Complete-resume AI generation from verified user facts, with a preview and explicit Apply action
 - AI section writing for all 60 sections, grammar and clarity correction, professional suggestions, and resume-aware or general Q&A
+- ResumeForge Free AI is the default: an on-device career-writing engine with no account, API key, billing, usage quota, or network request
 - OpenAI Responses API, Google Gemini, and configurable OpenAI-compatible/local provider connections
 - Optional OpenAI web search or Gemini Google Search grounding with source links
 - Session-only API keys that are never stored in resumes, browser storage, exports, or source code
@@ -54,23 +55,27 @@ Open the local URL printed by Vite. Use `npm run build` to create a production b
 
 ## Testing
 
-Run `npm test` for the 7,612-test automated suite. It includes a 5,000-case import integrity/mapping matrix, a 1,024-case combinatorial section-movement matrix, a 1,000-case export matrix, an exact 500-case repeatable-section-item matrix, four focused project migration/detail cases, boundary and security tests, and full UI integration tests. Project coverage verifies text-preserving migration, existing-description retention, structured and unrestricted multiline details, complete project add/remove, save cleanup, and export retention. The export matrix rotates through every offered format, 40 template families, 25 resume-data profiles, one-to-five-page documents, and high/ultra quality. The suite also covers the upload/review/apply/template-change workflow, source fingerprints, line accounting, the home/editor workflow, continuous typing through autosave, templates, document controls, photos, multi-page behavior, customization, saved resumes, every export pipeline, AI review/apply/undo, provider request formats, credential and endpoint failures, injection escaping, long-input bounds, ATS accuracy and score limits, responsive CSS, and a repeated local performance workload.
+Run `npm test` for the 7,627-test automated suite. It includes a 5,000-case import integrity/mapping matrix, a 1,024-case combinatorial section-movement matrix, a 1,000-case export matrix, an exact 500-case repeatable-section-item matrix, four focused project migration/detail cases, 15 focused free-AI cases, boundary and security tests, and full UI integration tests. Free-AI coverage verifies complete-resume generation, section writing, grammar, professional review, seven career domains, cancellation, no-key operation, review-before-apply, and zero paid-provider calls. Project coverage verifies text-preserving migration, existing-description retention, structured and unrestricted multiline details, complete project add/remove, save cleanup, and export retention. The export matrix rotates through every offered format, 40 template families, 25 resume-data profiles, one-to-five-page documents, and high/ultra quality. The suite also covers the upload/review/apply/template-change workflow, source fingerprints, line accounting, the home/editor workflow, continuous typing through autosave, templates, document controls, photos, multi-page behavior, customization, saved resumes, every export pipeline, AI review/apply/undo, provider request formats, credential and endpoint failures, injection escaping, long-input bounds, ATS accuracy and score limits, responsive CSS, and a repeated local performance workload.
 
 `scripts/export-smoke.mjs` is the real-browser artifact gate. It downloads all nine export choices, one- and two-page PDF/Word files, and PNGs from Style, Industry, and Global template families. The generated PDF pages and raster files are then rendered/inspected rather than accepted on file existence alone.
 
 `scripts/section-items-smoke.mjs` verifies page-level and Content-panel add/remove actions in real Chromium at desktop and mobile viewports, edits a newly added job, audits browser storage for editor-only markup, and fails on page or console errors.
 
+`scripts/free-ai-smoke.mjs` creates and applies a complete resume, asks a trade-finance question, writes a project section, produces professional suggestions, verifies desktop/mobile layouts, saves and exports the generated document, and fails if free mode contacts OpenAI or Gemini.
+
 `QA-MANUAL-500.csv` supplies 500 independently executable human QA cases. They are intentionally marked ready for manual sign-off rather than falsely labelled as executed.
 
 `QA-MANUAL-IMPORT-5000.xlsx` supplies 5,000 additional authored manual cases across PDF, Word/rich documents, OCR/images, mapping integrity, source/editable mode, template switching, persistence/export, security/negative behavior, responsive devices, accessibility, and performance. These cases are also intentionally marked **not executed — ready for manual QA**.
 
-Deterministic domain scenarios cover Banking, Trade Finance, Software Testing, Functional Testing, Information Technology, Cheque Clearing/CTS, and experienced-professional resumes. These tests validate prompt fact preservation, structured response parsing, safe rendering, role vocabulary, and ATS matching. Live provider wording is probabilistic and requires the user's own API key, so no test can promise a provider will be perfect on every question.
+Deterministic domain scenarios cover Banking, Trade Finance, Software Testing, Functional Testing, Information Technology, Cheque Clearing/CTS, product design, and experienced-professional resumes. These tests validate supplied-fact preservation, structured response parsing, safe rendering, role vocabulary, and ATS matching. Connected-provider wording is probabilistic and requires the user's own API key, so no test can promise a provider will be perfect on every question.
 
 The GitHub Pages workflow runs tests and the production build before every deployment.
 
 ## AI setup and security
 
-Open the editor, select **AI Copilot**, then use **Connect**. Enter a provider model and a session-only API key. Credentials live only in React memory and disappear when the tab is closed or reloaded. The ATS preflight runs locally and needs no provider or key.
+Open the editor and select **AI Copilot**. **ResumeForge Free AI** is ready immediately and needs no configuration, key, account, billing, or network connection. It handles complete-resume creation, all section types, focused grammar corrections, professional suggestions, career-domain Q&A, and ATS guidance locally in the browser.
+
+Use **Connect** only when you intentionally want OpenAI, Google Gemini, or another compatible provider. Connected-provider credentials live only in React memory and disappear when the tab is closed or reloaded. The ATS preflight and ResumeForge Free AI remain local and keyless.
 
 This portable build can call a provider directly for personal use. A public production deployment should route AI calls through an authenticated server or serverless function with rate limits, abuse protection, and provider credentials stored in server secrets. Never embed an API key in this repository or the generated HTML.
 

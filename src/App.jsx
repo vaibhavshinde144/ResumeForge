@@ -609,7 +609,7 @@ export default function App() {
   const [saves, setSaves] = useState(readSavedResumes);
   const defaultAIProvider = AI_PROVIDERS[0];
   const [aiConfig, setAIConfig] = useState({ provider: defaultAIProvider.id, model: defaultAIProvider.model, endpoint: defaultAIProvider.endpoint, apiKey: '', useResearch: false });
-  const [aiConnection, setAIConnection] = useState('idle');
+  const [aiConnection, setAIConnection] = useState(defaultAIProvider.local ? 'connected' : 'idle');
   const [aiBusy, setAIBusy] = useState(false);
   const [aiResult, setAIResult] = useState(null);
   const [aiError, setAIError] = useState('');
@@ -707,7 +707,8 @@ export default function App() {
 
   const updateAIConfig = patch => {
     setAIConfig(current => ({ ...current, ...patch }));
-    setAIConnection('idle');
+    const nextProvider = AI_PROVIDERS.find(item => item.id === (patch.provider || aiConfig.provider));
+    setAIConnection(nextProvider?.local ? 'connected' : 'idle');
   };
 
   const rememberEditableTarget = event => {

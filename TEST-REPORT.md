@@ -1,10 +1,11 @@
-# ResumeForge v13 project-details verification report
+# ResumeForge v14 free-AI verification report
 
 Date: 26 July 2026 (Asia/Kolkata)
 
 ## Result
 
-- Automated tests: **7,612 passed, 0 failed** across 7 test files
+- Automated tests: **7,627 passed, 0 failed** across 8 test files
+- Dedicated free-AI coverage: **15 passed** across keyless operation, complete resumes, sections, grammar, review, seven career domains, offline boundaries, and cancellation
 - Dedicated import integrity matrix: **5,038 passed** (5,000 generated content/mapping cases + 38 format, heading, edge, security, rendering, and integrity checks)
 - Dedicated section-movement matrix: **1,027 passed** (1,024 combinations + 3 boundary/drop/sanitization cases)
 - Dedicated repeatable-section-item coverage: **504 passed** (500-case matrix across all 60 section definitions and ten item structures + 4 focused project cases)
@@ -12,8 +13,8 @@ Date: 26 July 2026 (Asia/Kolkata)
 - Manual QA catalogues: **5,500 authored cases** (5,000 import-focused XLSX + 500 legacy CSV), ready for independent human sign-off
 - Production build: **passed**
 - Production dependency audit: **0 known vulnerabilities**
-- Output: self-contained `dist/index.html`, 6,976,234 bytes
-- SHA-256: `ABE5D532661BED20930AE2CF41D4E982C80DF366F128884728B5C4BA23DB1AB9`
+- Output: self-contained `dist/index.html`, 6,989,516 bytes
+- SHA-256: `C33A22F9C6F1E886128F31BB00E4083441054620493F01B1D369F8F90EBFAAE0`
 - External scripts in built HTML: **0**
 - External stylesheets in built HTML: **0**
 
@@ -53,6 +54,14 @@ Existing project rows are migrated in place into complete project entries withou
 
 New projects receive this full detail structure automatically. Removing a project removes its name, metadata, and all nested details as one unit. Save/export serialization retains the user content and strips every project editor button. Focused unit/integration tests and the desktop/mobile Chromium gate passed; the latter completed **28/28 checks with 0 browser errors** and reopened the exported HTML to verify the custom details were present without editor controls.
 
+## Free AI request
+
+**ResumeForge Free AI** is now the default provider. It runs entirely inside the browser and requires no account, API key, payment method, quota, or network connection. It creates a structured resume from supplied facts, writes any available section, performs focused spelling/spacing/punctuation/capitalization corrections, produces prioritized professional review notes, answers career-domain questions, and works alongside the existing local ATS analysis. OpenAI, Gemini, and compatible/local connections remain optional rather than required.
+
+The engine preserves the review-first workflow: generation produces a preview, Apply is explicit, and Undo restores the previous resume. It does not invent employer names, dates, qualifications, metrics, or live facts. It clearly routes current-news or open-ended live-research needs to an optional connected provider instead of pretending its offline knowledge is current.
+
+Verification includes 15 focused unit cases, the full React apply/undo integration, and a **29/29 real-Chromium workflow**. The browser gate generated and applied a Trade Finance resume, retained its verified employer, SWIFT/UCP 600 content, quantified achievement and project details, answered a domain question, drafted project bullets, produced five professional suggestions, rendered desktop/mobile layouts, saved the resume, reopened the HTML export, and recorded **0 OpenAI/Gemini network requests and 0 browser errors**.
+
 ## Export fidelity defect
 
 Root cause: the page passed to `html-to-image` was itself positioned at `left: -10000px`. That root positioning was copied into the snapshot SVG, so the correctly sized canvas contained a page located outside its viewport. PDF and image files were therefore valid containers with blank page pixels. The previous Word exporter separately flattened `innerText`, which necessarily discarded template CSS, columns, spacing, colors, imagery, and alignment.
@@ -78,12 +87,13 @@ Real-browser artifact gate: headless Chromium downloaded all nine choices plus o
 | Documents | Profile photo, page add/navigation/removal, same/different page designs, header/footer, columns, tables |
 | Customization | Fonts, font upload, six RGB color controls, 36 list systems, 18 patterns, paper and image controls |
 | Storage | Draft persistence, manual saves, home-page listing, resume reopen, session-key non-persistence |
-| AI integration | OpenAI, Gemini, compatible/local request contracts; review-before-apply; undo; errors; citations |
+| Free AI | Default keyless/local provider; complete resume; 60-section writing; grammar; suggestions; career Q&A; save/export; zero paid-provider requests |
+| Connected AI | Optional OpenAI, Gemini, compatible/local request contracts; review-before-apply; undo; errors; citations |
 | AI safety | Truthfulness instructions, prompt-injection resistance, HTTPS enforcement, HTML escaping, malformed payload rejection |
 | ATS | Explainable bounded score, keyword matching/missing terms, complete-vs-incomplete accuracy comparison |
 | Exports | Exact PDF/Word/PNG/JPG/HTML/SVG; editable Word/TXT/RTF; nonblank pixel gate; multi-page PDF/Word; multi-page image ZIP |
 | Responsive | Desktop, 1150 px, 820 px, 500 px, mobile drawers/dock, and print layout rules |
-| Performance | Complete 7,612-test regression completed in 279.32 seconds on the local Windows host; real-browser 14-artifact export run completed in 79.2 seconds; 28-check item/project browser gate completed in 9.3 seconds |
+| Performance | Complete 7,627-test regression completed in 263.06 seconds with four workers on the local Windows host; final 29-check free-AI browser gate completed in 6.0 seconds; prior 14-artifact export and 28-check item/project gates remain green |
 
 ## Requested AI career scenarios
 
@@ -101,12 +111,12 @@ Each scenario checks that supplied facts remain in the structured resume and pro
 
 ## Honest limits
 
-- Live OpenAI/Gemini/local-model output was not sent because no user API key or live provider was available. Provider contracts and response handling were tested with deterministic network mocks. Live wording is probabilistic and must be reviewed.
+- ResumeForge Free AI is a focused deterministic career-writing engine, not a frontier general-purpose model. It cannot research current web facts and intentionally says so. Optional OpenAI/Gemini/local-model contracts and response handling are tested with deterministic network mocks; connected-provider wording remains probabilistic and must be reviewed.
 - Automated UI mocks are supplemented by real Chromium downloads, Poppler PDF rendering, image variance checks, PDF-to-PNG comparison, and DOCX package/image inspection. Final user-specific files should still be reviewed when they use unusual licensed fonts or remote images.
 - No OCR engine can guarantee 100% recognition across arbitrary scans, handwriting, languages, rotations, compression, or damage. ResumeForge preserves the source visual when available and requires verification. Editable reconstruction is not the same guarantee as pixel-identical source rendering.
 - DOCX import is semantic, not pixel-identical. Complex Word pagination, floating shapes, fields, and text boxes require a native Word/LibreOffice rendering or conversion service for closer fidelity.
 - The desktop app's interactive browser-control connection could not initialize during this run. A real headless Chromium session completed the download/artifact gate; this report does not mislabel that automation as a human manual session.
-- The 5,000 import cases in `QA-MANUAL-IMPORT-5000.xlsx` and 500 legacy cases in `QA-MANUAL-500.csv` are authored and ready; they are not falsely marked as executed. Human sign-off across physical devices, sample files, Word/PDF viewers, languages, and OCR conditions remains separate from the 7,612 passing automated checks.
+- The 5,000 import cases in `QA-MANUAL-IMPORT-5000.xlsx` and 500 legacy cases in `QA-MANUAL-500.csv` are authored and ready; they are not falsely marked as executed. Human sign-off across physical devices, sample files, Word/PDF viewers, languages, and OCR conditions remains separate from the 7,627 passing automated checks.
 - The ATS score is a local heuristic, not an employer or vendor score and not a guarantee of selection.
 
 ## Reproduce
