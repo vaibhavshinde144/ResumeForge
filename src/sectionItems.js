@@ -25,6 +25,8 @@ const PLACEHOLDER_LABELS = {
   References: 'reference'
 };
 
+export const PROJECT_DETAILS_HTML = '<p><strong>Roles &amp; responsibilities:</strong> Describe what you owned, delivered, improved, or coordinated.</p><p><strong>Duration:</strong> Add the project start and end dates.</p><p><strong>Skills &amp; technologies:</strong> Add tools, platforms, methods, and technical skills.</p><p>Add outcomes, links, team details, client information, or any other project detail here. Press Enter for another line.</p>';
+
 export function getRepeatableSectionName(section) {
   if (!section) return '';
   return section.dataset.sectionName || section.querySelector('h2')?.textContent?.trim() || '';
@@ -58,7 +60,43 @@ function splitParagraph(section, paragraph, separatorPattern, wrapperClass) {
   return true;
 }
 
+export function normalizeProjectEntries(section) {
+  if (getRepeatableSectionName(section) !== 'Projects') return [];
+  [...section.children].filter(node => node.matches('.project-row')).forEach(row => {
+    const following = row.nextElementSibling;
+    const entry = document.createElement('article');
+    entry.className = 'project-entry';
+    row.before(entry);
+    entry.appendChild(row);
+    if (following?.tagName === 'P' && !following.matches('[data-editor-ui]')) {
+      const details = document.createElement('div');
+      details.className = 'project-details';
+      details.dataset.projectDetails = 'true';
+      details.setAttribute('contenteditable', 'true');
+      details.appendChild(following);
+      entry.appendChild(details);
+    }
+  });
+  return [...section.children].filter(node => node.matches('.project-entry'));
+}
+
+export function ensureProjectDetails(entry) {
+  if (!entry?.matches('.project-entry')) return null;
+  let details = entry.querySelector(':scope > .project-details');
+  if (details) return details;
+  details = document.createElement('div');
+  details.className = 'project-details';
+  details.dataset.projectDetails = 'true';
+  details.setAttribute('contenteditable', 'true');
+  details.innerHTML = PROJECT_DETAILS_HTML;
+  const row = entry.querySelector(':scope > .project-row');
+  if (row) row.insertAdjacentElement('afterend', details);
+  else entry.appendChild(details);
+  return details;
+}
+
 export function normalizeSectionItems(section) {
+  if (getRepeatableSectionName(section) === 'Projects') normalizeProjectEntries(section);
   if (!isRepeatableSection(section) || section.querySelector(':scope > [data-resume-item-list]')) return section;
   const name = getRepeatableSectionName(section);
   const children = contentChildren(section);
@@ -82,7 +120,7 @@ export function getSectionItems(section) {
   if (skillList) return [...skillList.children].filter(node => !node.matches('[data-editor-ui]'));
 
   const children = contentChildren(section);
-  const preferredSelectors = ['.job', '.project-row', '.education', '.job-top'];
+  const preferredSelectors = ['.job', '.project-entry', '.project-row', '.education', '.job-top'];
   for (const selector of preferredSelectors) {
     const matches = children.filter(node => node.matches(selector));
     if (matches.length) return matches;
@@ -118,6 +156,14 @@ function resetClone(clone, sectionName) {
     if (dates) dates.textContent = 'Dates';
     const list = clone.querySelector('ul, ol');
     if (list) list.innerHTML = '<li>Add an achievement or responsibility.</li>';
+    return;
+  }
+  if (clone.matches('.project-entry')) {
+    const title = clone.querySelector('.project-row strong');
+    const meta = clone.querySelector('.project-row span');
+    if (title) title.textContent = 'New project';
+    if (meta) meta.textContent = 'Role · Year';
+    ensureProjectDetails(clone).innerHTML = PROJECT_DETAILS_HTML;
     return;
   }
   if (clone.matches('.project-row')) {
@@ -165,6 +211,14 @@ function resetClone(clone, sectionName) {
 
 function createFirstItem(section) {
   const name = getRepeatableSectionName(section);
+  if (name === 'Projects') {
+    const entry = document.createElement('article');
+    entry.className = 'project-entry';
+    entry.innerHTML = '<div class="project-row" contenteditable="true"><strong>New project</strong><span>Role · Year</span></div>';
+    ensureProjectDetails(entry);
+    section.appendChild(entry);
+    return entry;
+  }
   const list = section.querySelector(':scope > [data-resume-item-list], :scope > .skill-list, :scope > ul, :scope > ol');
   const tagName = list?.matches('ul, ol') ? 'li' : list?.matches('.skill-list, .resume-inline-items') ? 'span' : 'p';
   const item = document.createElement(tagName);

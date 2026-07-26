@@ -29,8 +29,8 @@ import {
   moveSectionInDocument
 } from './sectionMovement';
 import {
-  addSectionItem, getSectionItems, isRepeatableSection, normalizeSectionItems,
-  removeSectionItem
+  addSectionItem, ensureProjectDetails, getSectionItems, isRepeatableSection,
+  normalizeProjectEntries, normalizeSectionItems, removeSectionItem
 } from './sectionItems';
 import {
   assertRasterHasVisibleContent, buildRasterSvg, collectDocumentCss,
@@ -766,6 +766,23 @@ export default function App() {
 
       if (!isRepeatableSection(section)) return;
       normalizeSectionItems(section);
+      if (name === 'Projects') {
+        normalizeProjectEntries(section).forEach(entry => {
+          if (entry.querySelector(':scope > [data-project-action="details"]')) return;
+          const projectName = entry.querySelector('.project-row strong')?.textContent?.trim() || 'project';
+          const hasDetails = Boolean(entry.querySelector(':scope > .project-details'));
+          const detailsButton = document.createElement('button');
+          detailsButton.type = 'button';
+          detailsButton.className = 'project-details-button';
+          detailsButton.dataset.editorUi = 'project-controls';
+          detailsButton.dataset.projectAction = 'details';
+          detailsButton.contentEditable = 'false';
+          detailsButton.textContent = hasDetails ? 'Edit project details' : '+ Add project details';
+          detailsButton.title = `${hasDetails ? 'Edit' : 'Add'} details for ${projectName}`;
+          detailsButton.setAttribute('aria-label', `${hasDetails ? 'Edit' : 'Add'} details for ${projectName}`);
+          entry.appendChild(detailsButton);
+        });
+      }
       const heading = section.querySelector(':scope > .section-heading');
       if (heading && !heading.querySelector('[data-item-action="add"]')) {
         const addButton = document.createElement('button');
@@ -843,6 +860,25 @@ export default function App() {
   };
 
   const handleEditorClick = event => {
+    const projectActionButton = event.target.closest?.('[data-project-action="details"]');
+    if (projectActionButton) {
+      event.preventDefault();
+      event.stopPropagation();
+      const entry = projectActionButton.closest('.project-entry');
+      const existed = Boolean(entry?.querySelector(':scope > .project-details'));
+      const details = ensureProjectDetails(entry);
+      if (!details) return;
+      if (!existed) {
+        projectActionButton.textContent = 'Edit project details';
+        projectActionButton.setAttribute('aria-label', projectActionButton.getAttribute('aria-label')?.replace(/^Add/, 'Edit') || 'Edit project details');
+        setAnalysisMarkup(cleanEditorMarkup(resumeRef.current.innerHTML));
+        setResumeRevision(value => value + 1);
+        setIsSaved(false);
+        notify('Project details added — edit the suggested fields or press Enter for free text');
+      }
+      window.requestAnimationFrame(() => details.focus());
+      return;
+    }
     const itemActionButton = event.target.closest?.('[data-item-action]');
     if (itemActionButton) {
       event.preventDefault();

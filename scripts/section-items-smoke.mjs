@@ -1,5 +1,5 @@
 import { createRequire } from 'node:module';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const require = createRequire(import.meta.url);
@@ -47,6 +47,29 @@ await expectCount(skills.locator(':scope > .skill-list > span'), 7, 'skills afte
 await page.getByRole('button', { name: 'Remove Skills item 7', exact: true }).click();
 await expectCount(skills.locator(':scope > .skill-list > span'), 6, 'skills after remove');
 
+const projects = section('Projects');
+await expectCount(projects.locator(':scope > .project-entry'), 2, 'migrated project entries');
+await page.getByRole('button', { name: 'Add details for Pulse Insights', exact: true }).click();
+const projectDetails = projects.locator(':scope > .project-entry').first().locator('.project-details');
+await projectDetails.waitFor({ state: 'visible' });
+await projectDetails.fill('Roles & responsibilities: Led payment integration and release delivery.');
+await projectDetails.press('Enter');
+await projectDetails.pressSequentially('Duration: Jan 2024 – Dec 2024');
+await projectDetails.press('Enter');
+await projectDetails.pressSequentially('Skills & technologies: React, APIs, testing');
+await projectDetails.press('Enter');
+await projectDetails.pressSequentially('Additional unrestricted project detail.');
+const projectText = await projectDetails.innerText();
+for (const expected of ['Roles & responsibilities:', 'Duration:', 'Skills & technologies:', 'Additional unrestricted project detail.']) {
+  if (!projectText.includes(expected)) throw new Error(`project details missing ${expected}`);
+}
+await page.getByRole('button', { name: 'Add Projects item', exact: true }).click();
+await expectCount(projects.locator(':scope > .project-entry'), 3, 'projects after add');
+const newProject = projects.locator(':scope > .project-entry').nth(2);
+if (!(await newProject.innerText()).includes('Skills & technologies:')) throw new Error('new project does not contain structured details');
+await page.getByRole('button', { name: 'Remove Projects item 3', exact: true }).click();
+await expectCount(projects.locator(':scope > .project-entry'), 2, 'projects after remove');
+
 if (await page.locator('[aria-label="Add Summary item"]').count()) throw new Error('Summary must not expose repeatable item controls');
 if (await page.locator('[aria-label="Add Objective item"]').count()) throw new Error('Objective must not expose repeatable item controls');
 
@@ -62,8 +85,21 @@ const storageAudit = await page.evaluate(() => ({
   draft: localStorage.getItem('resumeforge-draft-pages') || ''
 }));
 for (const [key, value] of Object.entries(storageAudit)) {
-  if (/data-editor-ui|item-remove-button|data-item-editable/.test(value)) throw new Error(`${key} contains editor-only item controls`);
+  if (/data-editor-ui|item-remove-button|data-item-editable|project-details-button|data-project-action/.test(value)) throw new Error(`${key} contains editor-only item controls`);
 }
+if (!storageAudit.saves.includes('Additional unrestricted project detail.')) throw new Error('saved resume lost project details');
+
+await page.getByRole('button', { name: /^Export/ }).click();
+const exportModal = page.getByRole('dialog');
+await exportModal.locator('.format-grid button').filter({ hasText: /^\s*HTML/ }).click();
+const projectExportPromise = page.waitForEvent('download', { timeout: 120000 });
+await exportModal.getByRole('button', { name: /Export HTML/i }).click();
+const projectExport = await projectExportPromise;
+const projectExportPath = path.join(outputDirectory, 'project-details-resume.html');
+await projectExport.saveAs(projectExportPath);
+const projectExportHtml = await readFile(projectExportPath, 'utf8');
+if (!projectExportHtml.includes('Additional unrestricted project detail.')) throw new Error('exported resume lost project details');
+if (/<button[^>]+project-details-button|data-project-action=|data-editor-ui=/i.test(projectExportHtml)) throw new Error('exported resume contains project editor controls');
 
 await page.setViewportSize({ width: 390, height: 844 });
 await page.screenshot({ path: path.join(outputDirectory, 'mobile-editor.png'), fullPage: true });
@@ -76,12 +112,13 @@ await page.setViewportSize({ width: 1600, height: 1100 });
 await page.screenshot({ path: path.join(outputDirectory, 'desktop-editor.png'), fullPage: true });
 await writeFile(path.join(outputDirectory, 'results.json'), JSON.stringify({
   targetUrl,
-  checks: 16,
+  checks: 28,
   experienceItems: await experience.locator(':scope > .job').count(),
   skillItems: await skills.locator(':scope > .skill-list > span').count(),
+  projectItems: await projects.locator(':scope > .project-entry').count(),
   errors
 }, null, 2));
 await browser.close();
 
 if (errors.length) throw new Error(errors.join('\n'));
-process.stdout.write(JSON.stringify({ targetUrl, checks: 16, outputDirectory }, null, 2));
+process.stdout.write(JSON.stringify({ targetUrl, checks: 28, outputDirectory }, null, 2));

@@ -82,9 +82,10 @@ Pages deployment workflow. Developers can run:
   npm test
   npm run dev
 
-The included automated suite contains 7,607 tests, including 5,000 generated import
+The included automated suite contains 7,612 tests, including 5,000 generated import
 integrity/mapping cases, 1,024 combinatorial whole-section movement cases, and 500
-repeatable-section add/remove cases across every section definition and item structure. It also
+repeatable-section add/remove cases across every section definition and item structure, plus
+project-specific migration, multiline detail, save, and export coverage. It also
 covers the reported typing/autosave regression, upload/review/template switching, positive
 and negative workflows, edge cases, provider errors, injection safety, ATS accuracy bounds,
 performance, responsive layouts, seven requested career domains, and all nine export
