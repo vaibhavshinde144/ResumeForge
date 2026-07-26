@@ -56,9 +56,11 @@ AI COPILOT
 ----------
 Open a resume and select AI Copilot. ResumeForge Free AI is ready immediately: no account,
 API key, payment, quota, or internet request. It can draft a complete resume from verified
-facts, write any of the 60 sections, correct common grammar issues, provide prioritized
-suggestions, answer focused career questions, and guide ATS improvements. Every change is
-previewed and requires Apply before it replaces resume content.
+facts, deeply rewrite brief notes across all 60 sections, correct common grammar issues,
+provide prioritized suggestions, answer detailed career questions through 20 professional
+domain knowledge packs, and guide ATS improvements. Every change is previewed and requires
+Apply before it replaces resume content. It never intentionally invents employers, dates,
+qualifications, or metrics.
 
 Use Connect only to optionally choose OpenAI, Google Gemini, or a compatible/local provider
 for larger models or live web research. API keys are held only in memory for the current

@@ -53,7 +53,7 @@ export default function AIAssistantPanel({
 }) {
   const [tab, setTab] = useState('create');
   const [intake, setIntake] = useState(EMPTY_INTAKE);
-  const [section, setSection] = useState('Professional Summary');
+  const [section, setSection] = useState('Summary');
   const [sectionDetails, setSectionDetails] = useState('');
   const [tone, setTone] = useState('confident and concise');
   const [length, setLength] = useState('concise');
@@ -61,6 +61,7 @@ export default function AIAssistantPanel({
   const [reviewFocus, setReviewFocus] = useState('Professional quality, relevance, evidence, readability, and ATS compatibility');
   const [question, setQuestion] = useState('');
   const provider = AI_PROVIDERS.find(item => item.id === config.provider) || AI_PROVIDERS[0];
+  const sectionActionLabel = section === 'Summary' ? 'Professional Summary' : section;
   const setIntakeField = (key, value) => setIntake(current => ({ ...current, [key]: value }));
   const runFull = () => onRun('full', { ...intake, jobDescription: intake.jobDescription || jobDescription });
 
@@ -83,11 +84,11 @@ export default function AIAssistantPanel({
       </section>}
 
       {tab === 'write' && <section className="ai-workflow">
-        <div className="ai-section-intro"><FilePenLine size={19}/><div><h3>Write any resume section</h3><p>Choose from all {SECTION_CATALOG.length} section types and provide only verified details.</p></div></div>
+        <div className="ai-section-intro"><FilePenLine size={19}/><div><h3>Write any resume section</h3><p>Transform brief verified facts into professional, domain-aware content across all {SECTION_CATALOG.length} section types.</p></div></div>
         <Field label="Section"><select aria-label="AI section type" value={section} onChange={event => setSection(event.target.value)}>{SECTION_CATALOG.map(item => <option key={item.name}>{item.name}</option>)}</select></Field>
         <Field label="Facts and context"><textarea rows="8" value={sectionDetails} onChange={event => setSectionDetails(event.target.value)} placeholder="What must this section say? Include names, dates, tools, actions, and outcomes."/></Field>
         <div className="ai-form-grid two"><Field label="Tone"><select value={tone} onChange={event => setTone(event.target.value)}><option>confident and concise</option><option>executive and strategic</option><option>technical and precise</option><option>warm and people-focused</option><option>academic and evidence-led</option></select></Field><Field label="Length"><select value={length} onChange={event => setLength(event.target.value)}><option>concise</option><option>standard</option><option>detailed</option></select></Field></div>
-        <RunButton onClick={() => onRun('section', { section, details: sectionDetails, tone, length })} busy={busy} disabled={!sectionDetails.trim()}>Draft {section}</RunButton>
+        <RunButton onClick={() => onRun('section', { section, details: sectionDetails, tone, length })} busy={busy} disabled={!sectionDetails.trim()}>Draft {sectionActionLabel}</RunButton>
       </section>}
 
       {tab === 'review' && <section className="ai-workflow">
@@ -117,7 +118,7 @@ export default function AIAssistantPanel({
       {tab === 'connect' && <section className="ai-workflow">
         <div className="ai-section-intro"><PlugZap size={19}/><div><h3>Choose an AI provider</h3><p>Free AI runs on this device. Connected providers remain optional for larger models and live research.</p></div></div>
         <Field label="Provider"><select aria-label="AI provider" value={config.provider} onChange={event => { const next = AI_PROVIDERS.find(item => item.id === event.target.value); onConfigChange({ provider: next.id, model: next.model, endpoint: next.endpoint, apiKey: '', useResearch: false }); }}>{AI_PROVIDERS.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}</select></Field>
-        {provider.local ? <div className="free-ai-card"><div><ShieldCheck size={18}/><strong>No key, account, billing, or network request</strong></div><p>Resume creation, section writing, grammar checks, professional suggestions, career Q&amp;A, and ATS guidance run entirely in your browser. Your resume stays on this device.</p><small>Free AI uses a focused career-writing engine. Current web facts and open-ended general knowledge require an optional connected provider.</small></div> : <>
+        {provider.local ? <div className="free-ai-card"><div><ShieldCheck size={18}/><strong>No key, account, billing, or network request</strong></div><p>Deep resume rewriting, 20 career-domain knowledge packs, grammar checks, professional suggestions, career Q&amp;A, and ATS guidance run entirely in your browser. Your resume stays on this device.</p><small>The professional career engine expands verified facts without inventing employers, dates, qualifications, or metrics. Current web facts and unrestricted general knowledge require an optional connected provider.</small></div> : <>
           <Field label="Model"><input aria-label="AI model" value={config.model} onChange={event => onConfigChange({ model: event.target.value })} placeholder="Provider model ID"/></Field>
           {(config.provider === 'compatible' || config.provider === 'openai') && <Field label="Endpoint" hint="Remote endpoints must use HTTPS. HTTP is allowed only on localhost."><input aria-label="AI endpoint" value={config.endpoint} onChange={event => onConfigChange({ endpoint: event.target.value })}/></Field>}
           <Field label={provider.keyLabel} hint="Use a restricted key. For a public production deployment, route requests through your own authenticated server."><input aria-label="AI API key" type="password" autoComplete="off" value={config.apiKey} onChange={event => onConfigChange({ apiKey: event.target.value })} placeholder="Session-only credential"/></Field>

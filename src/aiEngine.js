@@ -4,7 +4,7 @@ const OPENAI_ENDPOINT = 'https://api.openai.com/v1/responses';
 const GEMINI_ENDPOINT = model => `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
 
 export const AI_PROVIDERS = [
-  { id: 'free', label: 'ResumeForge Free AI', model: 'On-device Career Engine 1.0', endpoint: '', keyLabel: 'No API key required', supportsResearch: false, requiresKey: false, local: true },
+  { id: 'free', label: 'ResumeForge Free AI', model: 'On-device Professional Career Engine 2.0', endpoint: '', keyLabel: 'No API key required', supportsResearch: false, requiresKey: false, local: true },
   { id: 'openai', label: 'OpenAI', model: 'gpt-5.6-sol', endpoint: OPENAI_ENDPOINT, keyLabel: 'OpenAI API key', supportsResearch: true, requiresKey: true },
   { id: 'gemini', label: 'Google Gemini', model: 'gemini-3.6-flash', endpoint: '', keyLabel: 'Gemini API key', supportsResearch: true, requiresKey: true },
   { id: 'compatible', label: 'Compatible / local', model: '', endpoint: 'http://localhost:11434/v1/chat/completions', keyLabel: 'API key (optional locally)', supportsResearch: false, requiresKey: false },

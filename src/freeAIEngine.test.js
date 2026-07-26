@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { AI_PROVIDERS, callAIProvider, parseGrammarCorrections, parseStructuredResume, testAIConnection } from './aiEngine';
-import { correctFreeAIText, freeAIGrammarCorrections, generateFreeAIResponse } from './freeAIEngine';
+import { correctFreeAIText, FREE_AI_KNOWLEDGE_DOMAINS, freeAIGrammarCorrections, generateFreeAIResponse } from './freeAIEngine';
 
 const request = (task, payload = {}, context = { text: '', sections: [] }, jobDescription = '') => ({ task, payload, context, jobDescription });
 
@@ -10,14 +10,14 @@ describe('ResumeForge Free AI', () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch');
     const result = await callAIProvider({ provider: 'free', apiKey: '' }, request('question', { question: 'How do I improve ATS compatibility?' }));
     expect(result.provider).toBe('ResumeForge Free AI');
-    expect(result.model).toContain('On-device');
+    expect(result.model).toContain('Professional Career Engine 2.0');
     expect(result.raw.local).toBe(true);
     expect(fetchSpy).not.toHaveBeenCalled();
     fetchSpy.mockRestore();
   });
 
   it('verifies immediately without an account, key, or network request', async () => {
-    const result = await testAIConnection({ provider: 'free', apiKey: '', model: 'On-device Career Engine 1.0' });
+    const result = await testAIConnection({ provider: 'free', apiKey: '', model: 'On-device Professional Career Engine 2.0' });
     expect(result.ok).toBe(true);
     expect(result.text).toBe('CONNECTION_OK');
   });
@@ -35,9 +35,11 @@ describe('ResumeForge Free AI', () => {
     const data = parseStructuredResume(text);
     expect(data.profile.name).toBe('Priya Sharma');
     expect(data.summary).toContain('6 years');
+    expect(data.summary).toContain('accurate and compliant transaction processing');
+    expect(data.summary).not.toContain('Documented scope includes');
     expect(data.experience[0]).toMatchObject({ role: 'Trade Finance Specialist', company: 'Verified Bank', dates: '2020-Present' });
     expect(data.experience[0].bullets).toContain('Reduced document exceptions by 18%.');
-    expect(data.projects[0].bullets).toContain('Coordinated release testing.');
+    expect(data.projects[0].bullets.some(item => item.startsWith('Coordinated release testing'))).toBe(true);
     expect(data.skills).toContain('UCP 600');
     expect(text).not.toContain('Invented Employer');
   });
@@ -45,9 +47,57 @@ describe('ResumeForge Free AI', () => {
   it('writes concise paragraphs and evidence-oriented bullet sections', () => {
     const summary = generateFreeAIResponse(request('section', { section: 'Professional Summary', details: 'functional test analyst. validates banking workflows. coordinates UAT.', length: 'concise' }));
     const experience = generateFreeAIResponse(request('section', { section: 'Experience', details: 'designed 120 test cases\ncoordinated UAT defects' }));
-    expect(summary).toBe('Functional test analyst. Validates banking workflows. Coordinates UAT.');
-    expect(experience).toContain('- Designed 120 test cases.');
-    expect(experience).toContain('- Coordinated UAT defects.');
+    expect(summary).toContain('Functional Test Analyst');
+    expect(summary).toContain('validation of banking workflows');
+    expect(summary).toContain('coordination of uat');
+    expect(summary.split(/\s+/).length).toBeGreaterThan(40);
+    expect(experience).toContain('- Designed 120 test cases');
+    expect(experience).toContain('- Coordinated UAT defects');
+  });
+
+  it('deeply rewrites the exact short mixed-domain prompt instead of echoing it', () => {
+    const input = 'I have 10 years experience in Trade Finance, Software Testing, Functional Testing.';
+    const summary = generateFreeAIResponse(request('section', {
+      section: 'Professional Summary', details: input, tone: 'confident and concise', length: 'concise'
+    }));
+    expect(summary).not.toBe(input);
+    expect(summary).not.toContain('I have');
+    expect(summary).toContain('10 years of experience');
+    expect(summary).toContain('Trade Finance and Quality Assurance professional');
+    expect(summary).toContain('requirements analysis');
+    expect(summary).toContain('accurate and compliant transaction processing');
+    expect(summary.split(/\s+/).length).toBeGreaterThanOrEqual(55);
+    expect(summary.split(/\s+/).length).toBeLessThanOrEqual(100);
+  });
+
+  it('changes professional positioning by tone without altering supplied facts', () => {
+    const details = '8 years experience as IT support engineer. resolved service desk incidents.';
+    const concise = generateFreeAIResponse(request('section', { section: 'Professional Summary', details, tone: 'confident and concise', length: 'standard' }));
+    const executive = generateFreeAIResponse(request('section', { section: 'Professional Summary', details, tone: 'executive and strategic', length: 'standard' }));
+    expect(concise).not.toBe(executive);
+    expect(concise).toContain('8 years');
+    expect(executive).toContain('8 years');
+    expect(executive).toContain('risk-aware, cross-functional perspective');
+    expect(`${concise} ${executive}`).not.toMatch(/Goldman|Microsoft|2025|40%/i);
+  });
+
+  it('turns weak responsibility wording into action-oriented evidence bullets', () => {
+    const result = generateFreeAIResponse(request('section', {
+      section: 'Experience', details: 'responsible for test cases\nworked on UAT\nhandled defects'
+    }));
+    expect(result).toContain('- Managed test cases');
+    expect(result).toContain('- Contributed to UAT');
+    expect(result).toContain('- Managed defects');
+    expect(result).not.toMatch(/Responsible for|Worked on|Handled/);
+  });
+
+  it('writes a targeted objective from sparse verified facts', () => {
+    const result = generateFreeAIResponse(request('section', {
+      section: 'Objective', details: '3 years functional testing seeking senior test analyst role'
+    }));
+    expect(result).toContain('Senior Test Analyst');
+    expect(result).toContain('3 years');
+    expect(result).toContain('requirements analysis');
   });
 
   it('corrects common spelling, punctuation, capitalization, and spacing safely', () => {
@@ -65,21 +115,53 @@ describe('ResumeForge Free AI', () => {
       text: 'Candidate candidate@example.com Summary Product designer Skills Figma',
       sections: [{ name: 'Summary' }, { name: 'Skills' }]
     }, 'Product designer accessibility research analytics'));
-    expect(result).toContain('Experience:');
-    expect(result).toContain('Target role alignment:');
+    expect(result).toContain('Experience —');
+    expect(result).toContain('Target-role alignment —');
     expect(result).toContain('accessibility');
   });
 
   it.each([
     ['banking KYC resume', 'KYC and AML controls'],
     ['trade finance SWIFT role', 'UCP 600'],
-    ['software testing Selenium resume', 'API testing'],
+    ['software testing resume', 'risk-based test planning'],
     ['functional testing UAT', 'requirements analysis'],
-    ['IT support engineer', 'incident management'],
+    ['automation testing with Selenium', 'automation-framework design'],
+    ['IT support engineer', 'incident and service-request management'],
     ['cheque clearing CTS', 'inward and outward clearing'],
-    ['product design Figma', 'user research'],
+    ['software engineer API role', 'maintainable application development'],
+    ['data analyst Power BI', 'data preparation and validation'],
+    ['cybersecurity SOC analyst', 'security monitoring and investigation'],
+    ['project manager PMO', 'risk and dependency management'],
+    ['product design Figma', 'user and product discovery'],
+    ['accounting general ledger', 'financial reporting and analysis'],
+    ['supply chain operations', 'process and capacity management'],
+    ['sales business development', 'consultative selling'],
+    ['customer service role', 'customer issue resolution'],
+    ['human resources talent acquisition', 'talent and employee lifecycle support'],
+    ['digital marketing campaign', 'audience and market insight'],
+    ['healthcare patient care', 'patient- or service-centred delivery'],
+    ['education teacher curriculum', 'learner-centred planning'],
   ])('answers the %s career domain without a paid provider', (question, expected) => {
-    expect(generateFreeAIResponse(request('question', { question }))).toContain(expected);
+    const result = generateFreeAIResponse(request('question', { question }));
+    expect(result.toLowerCase()).toContain(expected.toLowerCase());
+    expect(result).toContain('Evidence that will make the profile credible');
+    expect(result).toContain('ATS vocabulary to consider when truthful');
+  });
+
+  it('ships at least 20 substantial local career knowledge packs', () => {
+    expect(FREE_AI_KNOWLEDGE_DOMAINS).toHaveLength(20);
+    FREE_AI_KNOWLEDGE_DOMAINS.forEach(domain => {
+      expect(domain.label.length).toBeGreaterThan(5);
+      expect(domain.keywords.length).toBeGreaterThanOrEqual(6);
+    });
+  });
+
+  it('prioritizes the domain in the question over unrelated resume context', () => {
+    const result = generateFreeAIResponse(request('question', { question: 'How should I position a trade finance resume?' }, {
+      text: 'Product Designer Figma user research', sections: [{ name: 'Experience' }]
+    }));
+    expect(result).toContain('Trade Finance professional');
+    expect(result).not.toContain('Product Designer');
   });
 
   it('states the offline boundary for live or unrelated facts', () => {
