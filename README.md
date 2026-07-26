@@ -45,12 +45,16 @@ Open the local URL printed by Vite. Use `npm run build` to create a production b
 - Automatic local ATS preflight with contact, section, evidence, readability, structure, and job-keyword breakdowns
 - Truthfulness and prompt-injection safeguards that instruct providers not to invent personal history or obey instructions embedded in pasted content
 - Browser-local drafts and a saved-resume library
-- PDF, DOCX, PNG, JPG, HTML, TXT, RTF, and SVG exports
+- Exact-visual PDF, Word, PNG, JPG, HTML, and SVG exports generated from one validated page render
+- Separate editable Word, TXT, and RTF exports for content workflows where the file standard cannot preserve arbitrary browser CSS pixel-for-pixel
+- Ultra 4x raster quality, nonblank output validation, multi-page PDF/Word, and ZIP packaging for multi-page PNG/JPG
 - Desktop, tablet, and mobile layouts
 
 ## Testing
 
-Run `npm test` for the 6,107-test automated suite. It includes a 5,000-case import integrity/mapping matrix, a 1,024-case combinatorial section-movement matrix, boundary and security tests, and full UI integration tests. It also covers the upload/review/apply/template-change workflow, source fingerprints, line accounting, the home/editor workflow, continuous typing through autosave, templates, document controls, photos, multi-page behavior, customization, saved resumes, every export pipeline, AI review/apply/undo, provider request formats, credential and endpoint failures, injection escaping, long-input bounds, ATS accuracy and score limits, responsive CSS, and a repeated local performance workload.
+Run `npm test` for the 7,107-test automated suite. It includes a 5,000-case import integrity/mapping matrix, a 1,024-case combinatorial section-movement matrix, a 1,000-case export matrix, boundary and security tests, and full UI integration tests. The export matrix rotates through every offered format, 40 template families, 25 resume-data profiles, one-to-five-page documents, and high/ultra quality. The suite also covers the upload/review/apply/template-change workflow, source fingerprints, line accounting, the home/editor workflow, continuous typing through autosave, templates, document controls, photos, multi-page behavior, customization, saved resumes, every export pipeline, AI review/apply/undo, provider request formats, credential and endpoint failures, injection escaping, long-input bounds, ATS accuracy and score limits, responsive CSS, and a repeated local performance workload.
+
+`scripts/export-smoke.mjs` is the real-browser artifact gate. It downloads all nine export choices, one- and two-page PDF/Word files, and PNGs from Style, Industry, and Global template families. The generated PDF pages and raster files are then rendered/inspected rather than accepted on file existence alone.
 
 `QA-MANUAL-500.csv` supplies 500 independently executable human QA cases. They are intentionally marked ready for manual sign-off rather than falsely labelled as executed.
 

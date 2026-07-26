@@ -17,10 +17,15 @@ vi.mock('html-to-image', () => ({ toPng: exportMocks.toPng, toJpeg: exportMocks.
 vi.mock('jspdf', () => ({ jsPDF: class MockPdf { addImage(...args) { exportMocks.pdfAddImage(...args); } addPage(...args) { exportMocks.pdfAddPage(...args); } save(...args) { exportMocks.pdfSave(...args); } } }));
 vi.mock('docx', () => ({
   Document: class MockDocument { constructor(value) { this.value = value; } },
+  ImageRun: class MockImageRun { constructor(value) { this.value = value; } },
   Paragraph: class MockParagraph { constructor(value) { this.value = value; } },
   TextRun: class MockTextRun { constructor(value) { this.value = value; } },
   Packer: { toBlob: exportMocks.packDocx },
   HeadingLevel: { TITLE: 'title', HEADING_2: 'heading2' },
+  SectionType: { NEXT_PAGE: 'nextPage' },
+  HorizontalPositionRelativeFrom: { PAGE: 'page' },
+  VerticalPositionRelativeFrom: { PAGE: 'page' },
+  TextWrappingType: { NONE: 0 },
 }));
 
 async function openEditor(user) {
@@ -388,6 +393,11 @@ describe('ResumeForge complete experience', () => {
     expect(exportMocks.pdfAddImage).toHaveBeenCalledTimes(2);
     expect(exportMocks.pdfAddPage).toHaveBeenCalledOnce();
     expect(exportMocks.pdfSave).toHaveBeenCalledOnce();
+    exportMocks.toPng.mock.calls.forEach(([capturedPage, options]) => {
+      expect(capturedPage.style.left).toBe('0px');
+      expect(capturedPage.parentElement.dataset.exportHost).toBe('true');
+      expect(options.style.left).toBe('0');
+    });
   });
 
   it('offers and executes every export pipeline without errors', async () => {
@@ -395,7 +405,7 @@ describe('ResumeForge complete experience', () => {
     render(<App />);
     await openEditor(user);
     const formats = [
-      ['PDF', 'PDF'], ['Word', 'DOCX'], ['PNG', 'PNG'], ['JPG', 'JPG'],
+      ['PDF', 'PDF'], ['Word (exact)', 'DOCX'], ['Word (editable)', 'DOCX-EDITABLE'], ['PNG', 'PNG'], ['JPG', 'JPG'],
       ['HTML', 'HTML'], ['Text', 'TXT'], ['RTF', 'RTF'], ['SVG', 'SVG'],
     ];
 
@@ -409,9 +419,9 @@ describe('ResumeForge complete experience', () => {
 
     expect(exportMocks.pdfSave).toHaveBeenCalledOnce();
     expect(exportMocks.pdfAddImage).toHaveBeenCalledOnce();
-    expect(exportMocks.toPng).toHaveBeenCalledTimes(2);
+    expect(exportMocks.toPng).toHaveBeenCalledTimes(4);
     expect(exportMocks.toJpeg).toHaveBeenCalledOnce();
-    expect(exportMocks.packDocx).toHaveBeenCalledOnce();
-    expect(HTMLAnchorElement.prototype.click).toHaveBeenCalledTimes(7);
+    expect(exportMocks.packDocx).toHaveBeenCalledTimes(2);
+    expect(HTMLAnchorElement.prototype.click).toHaveBeenCalledTimes(8);
   });
 });

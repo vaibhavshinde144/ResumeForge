@@ -70,7 +70,10 @@ sections, measurable evidence, readability, structure, and target-job keywords. 
 heuristic review tool, not an employer or ATS-vendor score, and cannot guarantee hiring.
 
 Your drafts and saved resumes are stored in the current browser on the current device.
-Use Export to download PDF, DOCX, PNG, JPG, HTML, TXT, RTF, or SVG copies.
+Use Export to download exact-visual PDF, Word, PNG, JPG, HTML, or SVG copies.
+Choose Word (exact) when the design must match the editor; it stores each page as a
+high-resolution full-page image. Choose Word (editable), TXT, or RTF when editable
+content matters more than pixel-identical browser styling.
 
 The source folder contains the full React/Vite project, automated tests, and a GitHub
 Pages deployment workflow. Developers can run:
@@ -79,7 +82,7 @@ Pages deployment workflow. Developers can run:
   npm test
   npm run dev
 
-The included automated suite contains 6,107 tests, including 5,000 generated import
+The included automated suite contains 7,107 tests, including 5,000 generated import
 integrity/mapping cases and 1,024 combinatorial whole-section movement cases. It also
 covers the reported typing/autosave regression, upload/review/template switching, positive
 and negative workflows, edge cases, provider errors, injection safety, ATS accuracy bounds,
