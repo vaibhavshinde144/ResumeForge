@@ -1,11 +1,11 @@
-# ResumeForge v14 free-AI verification report
+# ResumeForge v15 professional free-AI verification report
 
 Date: 26 July 2026 (Asia/Kolkata)
 
 ## Result
 
-- Automated tests: **7,627 passed, 0 failed** across 8 test files
-- Dedicated free-AI coverage: **15 passed** across keyless operation, complete resumes, sections, grammar, review, seven career domains, offline boundaries, and cancellation
+- Automated tests: **7,647 passed, 0 failed** across 8 test files
+- Dedicated free-AI coverage: **34 passed** across keyless operation, substantive rewriting, complete resumes, weak-input improvement, summaries, objectives, tone control, grammar, review, 20 career domains, context priority, offline boundaries, and cancellation
 - Dedicated import integrity matrix: **5,038 passed** (5,000 generated content/mapping cases + 38 format, heading, edge, security, rendering, and integrity checks)
 - Dedicated section-movement matrix: **1,027 passed** (1,024 combinations + 3 boundary/drop/sanitization cases)
 - Dedicated repeatable-section-item coverage: **504 passed** (500-case matrix across all 60 section definitions and ten item structures + 4 focused project cases)
@@ -13,8 +13,8 @@ Date: 26 July 2026 (Asia/Kolkata)
 - Manual QA catalogues: **5,500 authored cases** (5,000 import-focused XLSX + 500 legacy CSV), ready for independent human sign-off
 - Production build: **passed**
 - Production dependency audit: **0 known vulnerabilities**
-- Output: self-contained `dist/index.html`, 6,989,516 bytes
-- SHA-256: `C33A22F9C6F1E886128F31BB00E4083441054620493F01B1D369F8F90EBFAAE0`
+- Output: self-contained `dist/index.html`, 7,011,076 bytes
+- SHA-256: `E177B76E5F73189155CFE817759B94FF93935A2F00648EB5AA78C7C2ABB963F0`
 - External scripts in built HTML: **0**
 - External stylesheets in built HTML: **0**
 
@@ -56,11 +56,15 @@ New projects receive this full detail structure automatically. Removing a projec
 
 ## Free AI request
 
-**ResumeForge Free AI** is now the default provider. It runs entirely inside the browser and requires no account, API key, payment method, quota, or network connection. It creates a structured resume from supplied facts, writes any available section, performs focused spelling/spacing/punctuation/capitalization corrections, produces prioritized professional review notes, answers career-domain questions, and works alongside the existing local ATS analysis. OpenAI, Gemini, and compatible/local connections remain optional rather than required.
+**ResumeForge Free AI** is the default provider. It runs entirely inside the browser and requires no account, API key, payment method, quota, or network connection. Professional Career Engine 2.0 creates structured resumes, deeply rewrites short verified notes, writes every available section, improves weak responsibility language, performs focused grammar correction, produces prioritized review notes, answers detailed career-domain questions, and works alongside the local ATS analysis. OpenAI, Gemini, and compatible/local connections remain optional rather than required.
+
+Reported echo defect: the previous Summary path only corrected spelling and punctuation, so a short sentence could be returned almost unchanged. The replacement extracts supplied experience duration, professional identity, domains, explicit responsibilities, tools, and outcomes; it then composes a professional opening, connected expertise, credible value, and a tone-appropriate close. The exact reported sentence — “I have 10 years experience in Trade Finance, Software Testing, Functional Testing” — is now a permanent engine, React UI, and Chromium regression. Its output must retain 10 years and all three domains, contain 55–100 words, include domain-relevant professional language, omit first-person echoing, and introduce no employer, date, qualification, or metric.
+
+Depth expansion: 20 structured knowledge packs now cover Trade Finance, Functional Testing, Software QA, Test Automation, Banking, Cheque Clearing/CTS, IT Support, Software Engineering, Data Analytics, Cybersecurity, Project Management, Product Design, Finance/Accounting, Operations/Supply Chain, Sales, Customer Service, Human Resources, Marketing, Healthcare, and Education. Each pack supplies positioning, core expertise, evidence categories, value language, and truthful ATS vocabulary. Detailed Ask responses separate positioning, expertise, evidence, bullet structure, ATS terms, and verification guidance.
 
 The engine preserves the review-first workflow: generation produces a preview, Apply is explicit, and Undo restores the previous resume. It does not invent employer names, dates, qualifications, metrics, or live facts. It clearly routes current-news or open-ended live-research needs to an optional connected provider instead of pretending its offline knowledge is current.
 
-Verification includes 15 focused unit cases, the full React apply/undo integration, and a **29/29 real-Chromium workflow**. The browser gate generated and applied a Trade Finance resume, retained its verified employer, SWIFT/UCP 600 content, quantified achievement and project details, answered a domain question, drafted project bullets, produced five professional suggestions, rendered desktop/mobile layouts, saved the resume, reopened the HTML export, and recorded **0 OpenAI/Gemini network requests and 0 browser errors**.
+Verification includes 34 focused unit cases, two full React integrations covering apply/undo and the exact reported prompt, and a **36/36 real-Chromium workflow**. The browser gate generated and applied a Trade Finance resume, retained its verified employer, SWIFT/UCP 600 content, quantified achievement and project details, transformed the reported mixed-domain sentence into substantive professional copy, produced evidence and ATS guidance, drafted project bullets, rendered desktop/mobile layouts, saved the resume, reopened the HTML export, and recorded **0 OpenAI/Gemini network requests and 0 browser errors**.
 
 ## Export fidelity defect
 
@@ -87,17 +91,17 @@ Real-browser artifact gate: headless Chromium downloaded all nine choices plus o
 | Documents | Profile photo, page add/navigation/removal, same/different page designs, header/footer, columns, tables |
 | Customization | Fonts, font upload, six RGB color controls, 36 list systems, 18 patterns, paper and image controls |
 | Storage | Draft persistence, manual saves, home-page listing, resume reopen, session-key non-persistence |
-| Free AI | Default keyless/local provider; complete resume; 60-section writing; grammar; suggestions; career Q&A; save/export; zero paid-provider requests |
+| Free AI | Default keyless/local Professional Career Engine 2.0; deep fact-preserving rewriting; 20 domain packs; complete resume; 60-section writing; grammar; suggestions; evidence-rich career Q&A; save/export; zero paid-provider requests |
 | Connected AI | Optional OpenAI, Gemini, compatible/local request contracts; review-before-apply; undo; errors; citations |
 | AI safety | Truthfulness instructions, prompt-injection resistance, HTTPS enforcement, HTML escaping, malformed payload rejection |
 | ATS | Explainable bounded score, keyword matching/missing terms, complete-vs-incomplete accuracy comparison |
 | Exports | Exact PDF/Word/PNG/JPG/HTML/SVG; editable Word/TXT/RTF; nonblank pixel gate; multi-page PDF/Word; multi-page image ZIP |
 | Responsive | Desktop, 1150 px, 820 px, 500 px, mobile drawers/dock, and print layout rules |
-| Performance | Complete 7,627-test regression completed in 263.06 seconds with four workers on the local Windows host; final 29-check free-AI browser gate completed in 6.0 seconds; prior 14-artifact export and 28-check item/project gates remain green |
+| Performance | Complete 7,647-test regression completed in 409.77 seconds with four workers on the local Windows host; final 36-check free-AI browser gate completed in under 10 seconds; prior 14-artifact export and 28-check item/project gates remain green |
 
 ## Requested AI career scenarios
 
-Deterministic fixtures passed for:
+Deterministic fixtures passed for all 20 knowledge domains, including:
 
 - Banking / relationship management / KYC / AML / credit
 - Trade Finance / SWIFT / UCP 600 / sanctions / export transactions
@@ -106,17 +110,24 @@ Deterministic fixtures passed for:
 - Information Technology / infrastructure / Active Directory / networking / incidents
 - Cheque Department / CTS / inward and outward clearing / reconciliation
 - Experienced-professional resume / operations / leadership / compliance / measurable outcomes
+- Software Engineering / APIs / maintainable delivery
+- Data Analytics / SQL / Power BI / reporting
+- Cybersecurity / monitoring / vulnerability / incident response
+- Project Management / delivery / RAID / governance
+- Finance and Accounting / ledger / reconciliation / audit
+- Supply Chain / logistics / procurement / inventory
+- Sales, Customer Service, Human Resources, Marketing, Healthcare, and Education
 
 Each scenario checks that supplied facts remain in the structured resume and prompt, safe editable markup is generated, role terminology is present, and ATS keyword coverage is high. The application deliberately instructs AI providers not to invent employers, dates, qualifications, metrics, or credentials.
 
 ## Honest limits
 
-- ResumeForge Free AI is a focused deterministic career-writing engine, not a frontier general-purpose model. It cannot research current web facts and intentionally says so. Optional OpenAI/Gemini/local-model contracts and response handling are tested with deterministic network mocks; connected-provider wording remains probabilistic and must be reviewed.
+- ResumeForge Free AI is a focused deterministic professional career engine, not a trained frontier general-purpose language model. Its knowledge packs and composition rules provide substantially deeper career writing without a key, but they cannot reproduce unrestricted model reasoning or research current web facts. Optional OpenAI/Gemini/local-model contracts and response handling are tested with deterministic network mocks; connected-provider wording remains probabilistic and must be reviewed.
 - Automated UI mocks are supplemented by real Chromium downloads, Poppler PDF rendering, image variance checks, PDF-to-PNG comparison, and DOCX package/image inspection. Final user-specific files should still be reviewed when they use unusual licensed fonts or remote images.
 - No OCR engine can guarantee 100% recognition across arbitrary scans, handwriting, languages, rotations, compression, or damage. ResumeForge preserves the source visual when available and requires verification. Editable reconstruction is not the same guarantee as pixel-identical source rendering.
 - DOCX import is semantic, not pixel-identical. Complex Word pagination, floating shapes, fields, and text boxes require a native Word/LibreOffice rendering or conversion service for closer fidelity.
 - The desktop app's interactive browser-control connection could not initialize during this run. A real headless Chromium session completed the download/artifact gate; this report does not mislabel that automation as a human manual session.
-- The 5,000 import cases in `QA-MANUAL-IMPORT-5000.xlsx` and 500 legacy cases in `QA-MANUAL-500.csv` are authored and ready; they are not falsely marked as executed. Human sign-off across physical devices, sample files, Word/PDF viewers, languages, and OCR conditions remains separate from the 7,627 passing automated checks.
+- The 5,000 import cases in `QA-MANUAL-IMPORT-5000.xlsx` and 500 legacy cases in `QA-MANUAL-500.csv` are authored and ready; they are not falsely marked as executed. Human sign-off across physical devices, sample files, Word/PDF viewers, languages, and OCR conditions remains separate from the 7,647 passing automated checks.
 - The ATS score is a local heuristic, not an employer or vendor score and not a guarantee of selection.
 
 ## Reproduce

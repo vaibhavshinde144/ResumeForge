@@ -545,6 +545,7 @@ export default function App() {
   const aiEditableTargetRef = useRef(null);
   const aiAbortRef = useRef(null);
   const analysisTimerRef = useRef(null);
+  const autosaveInputTimerRef = useRef(null);
   const draggedSectionRef = useRef(null);
   const initialPagesRef = useRef(null);
   if (!initialPagesRef.current) initialPagesRef.current = readDraftPages();
@@ -723,6 +724,13 @@ export default function App() {
       setAnalysisMarkup(cleanEditorMarkup(html));
       setResumeRevision(value => value + 1);
     }, 250);
+    window.clearTimeout(autosaveInputTimerRef.current);
+    if (autoSave) {
+      // Reset persistence on every keystroke. React may batch repeated
+      // setIsSaved(false) calls, so the state-driven effect alone cannot be
+      // relied on to restart its timer for the final character.
+      autosaveInputTimerRef.current = window.setTimeout(() => autoSaveDraft(), 900);
+    }
     setIsSaved(false);
   };
 
@@ -1248,7 +1256,10 @@ export default function App() {
     setAnalysisMarkup(contentMarkup);
   }, [contentMarkup]);
 
-  useEffect(() => () => window.clearTimeout(analysisTimerRef.current), []);
+  useEffect(() => () => {
+    window.clearTimeout(analysisTimerRef.current);
+    window.clearTimeout(autosaveInputTimerRef.current);
+  }, []);
 
   useEffect(() => {
     if (!resumeRef.current) return;

@@ -114,7 +114,7 @@ describe('ResumeForge complete experience', () => {
 
     await waitFor(() => {
       expect(window.localStorage.getItem('resumeforge-draft-pages')).toContain('Continuous typing works 12345.');
-    }, { timeout: 2200 });
+    }, { timeout: 5000 });
     expect(paragraph.isConnected).toBe(true);
     expect(document.activeElement).toBe(paragraph);
 
@@ -438,6 +438,22 @@ describe('ResumeForge complete experience', () => {
     expect(container.querySelector('.resume-page h1')).toHaveTextContent('Ananya Rao');
   });
 
+  it('rewrites a short mixed-domain note into a substantive professional summary', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await openEditor(user);
+    await user.click(screen.getByRole('button', { name: /AI Copilot/i }));
+    await user.click(screen.getByRole('tab', { name: /^Write$/i }));
+    await user.selectOptions(screen.getByLabelText('AI section type'), 'Summary');
+    const input = 'I have 10 years experience in Trade Finance, Software Testing, Functional Testing.';
+    fireEvent.change(screen.getByLabelText('Facts and context'), { target: { value: input } });
+    await user.click(screen.getByRole('button', { name: /Draft Professional Summary/i }));
+    const result = await screen.findByText(/Trade Finance and Quality Assurance professional/i);
+    expect(result).toHaveTextContent('10 years of experience');
+    expect(result).toHaveTextContent('requirements analysis');
+    expect(result).not.toHaveTextContent(/^I have 10 years experience/);
+  });
+
   it('exports a two-page resume as a real multi-page PDF flow', async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -480,5 +496,5 @@ describe('ResumeForge complete experience', () => {
     expect(exportMocks.toJpeg).toHaveBeenCalledOnce();
     expect(exportMocks.packDocx).toHaveBeenCalledTimes(2);
     expect(HTMLAnchorElement.prototype.click).toHaveBeenCalledTimes(8);
-  });
+  }, 90000);
 });

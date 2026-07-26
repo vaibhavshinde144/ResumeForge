@@ -32,6 +32,7 @@ await page.locator('.resume-page').waitFor({ state: 'visible' });
 await page.getByRole('button', { name: /AI Copilot/i }).click();
 await page.getByText('ResumeForge Free AI', { exact: true }).waitFor();
 if (!(await page.getByText(/Free and ready/i).count())) throw new Error('free AI is not the ready default provider');
+if (!(await page.getByText(/Professional Career Engine 2\.0/i).count())) throw new Error('professional career engine 2.0 is not active');
 
 await page.getByRole('tab', { name: 'Connect', exact: true }).click();
 await page.getByText('No key, account, billing, or network request', { exact: true }).waitFor();
@@ -63,10 +64,24 @@ for (const expected of ['Verified Bank', 'Reduced document exceptions by 18%', '
 }
 if (!(await page.locator('[data-section-name="Projects"] .project-details').count())) throw new Error('free AI project details are not editable below the project name');
 
+await page.getByRole('tab', { name: 'Write', exact: true }).click();
+await page.getByLabel('AI section type').selectOption({ label: 'Summary' });
+const shortSummaryInput = 'I have 10 years experience in Trade Finance, Software Testing, Functional Testing.';
+await field('Facts and context').fill(shortSummaryInput);
+await page.getByRole('button', { name: 'Draft Professional Summary', exact: true }).click();
+await resultText.filter({ hasText: 'Trade Finance and Quality Assurance professional' }).waitFor();
+const deepSummary = await resultText.innerText();
+if (deepSummary === shortSummaryInput) throw new Error('professional summary echoed the supplied note');
+if (!deepSummary.includes('10 years of experience')) throw new Error('professional summary lost the supplied experience duration');
+if (deepSummary.split(/\s+/).length < 55) throw new Error('professional summary was not developed into substantive resume copy');
+await page.screenshot({ path: path.join(outputDirectory, 'deep-summary.png'), fullPage: true });
+
 await page.getByRole('tab', { name: 'Ask', exact: true }).click();
 await field('Your question').fill('Which skills matter for a trade finance SWIFT resume?');
 await page.getByRole('button', { name: 'Get a focused answer', exact: true }).click();
 await resultText.filter({ hasText: 'UCP 600' }).waitFor();
+if (!(await resultText.innerText()).includes('Evidence that will make the profile credible')) throw new Error('domain answer lacks evidence guidance');
+if (!(await resultText.innerText()).includes('ATS vocabulary to consider when truthful')) throw new Error('domain answer lacks ATS guidance');
 
 await page.getByRole('tab', { name: 'Write', exact: true }).click();
 await page.getByLabel('AI section type').selectOption({ label: 'Projects' });
@@ -76,7 +91,7 @@ await resultText.filter({ hasText: 'Reduced exceptions by 18%.' }).waitFor();
 
 await page.getByRole('tab', { name: 'Review', exact: true }).click();
 await page.getByRole('button', { name: 'Generate professional suggestions', exact: true }).click();
-await resultText.filter({ hasText: 'Experience writing:' }).waitFor();
+await resultText.filter({ hasText: 'Experience writing —' }).waitFor();
 
 await page.screenshot({ path: path.join(outputDirectory, 'desktop-free-ai.png'), fullPage: true });
 await page.setViewportSize({ width: 390, height: 844 });
@@ -104,9 +119,9 @@ for (const expected of ['Priya Sharma', 'Verified Bank', 'Export Controls Upgrad
 
 if (paidProviderCalls.length) throw new Error(`free AI made paid provider calls: ${paidProviderCalls.join(', ')}`);
 await writeFile(path.join(outputDirectory, 'results.json'), JSON.stringify({
-  targetUrl, checks: 29, paidProviderCalls, errors,
+  targetUrl, checks: 36, paidProviderCalls, errors,
   generatedName: await page.locator('.resume-page h1').first().innerText(),
 }, null, 2));
 await browser.close();
 if (errors.length) throw new Error(errors.join('\n'));
-process.stdout.write(JSON.stringify({ targetUrl, checks: 29, paidProviderCalls: 0, outputDirectory }, null, 2));
+process.stdout.write(JSON.stringify({ targetUrl, checks: 36, paidProviderCalls: 0, outputDirectory }, null, 2));
