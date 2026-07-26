@@ -14,6 +14,10 @@ export function cleanEditorMarkup(markup = '') {
     section.removeAttribute('draggable');
     section.removeAttribute('aria-grabbed');
   });
+  holder.querySelectorAll('.resume-item-editable').forEach(item => {
+    item.classList.remove('resume-item-editable');
+    item.removeAttribute('data-item-editable');
+  });
   return holder.innerHTML;
 }
 

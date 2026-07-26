@@ -8,12 +8,13 @@ import {
   LIST_STYLES, PAPER_SIZES, RESUME_KNOWLEDGE, SECTION_CATALOG
 } from './customizationData';
 
-function SectionControl({ section, enabled, onChange, onMove }) {
+function SectionControl({ section, enabled, onChange, onMove, onAddItem, onRemoveItem }) {
   const directions = [
     ['up', ArrowUp, 'up'], ['down', ArrowDown, 'down'],
     ['left', ArrowLeft, 'to left column'], ['right', ArrowRight, 'to right column']
   ];
-  return <div className={`section-toggle ${enabled ? 'enabled' : ''}`}><span className="drag-handle">⠿</span><span className="section-toggle-copy"><b>{section.name}</b><small>{section.benefit}</small></span><div className="section-toggle-actions">{directions.map(([direction, Icon, label]) => <button key={direction} type="button" disabled={!enabled} title={`Move ${section.name} ${label}`} aria-label={`Move ${section.name} ${label}`} onClick={() => onMove(section.name, direction)}><Icon size={11}/></button>)}<button aria-label={`${enabled ? 'Hide' : 'Add'} ${section.name}`} className={`tiny-toggle ${enabled ? 'on' : ''}`} onClick={() => onChange(!enabled)}><i /></button></div></div>;
+  const repeatable = section.name !== 'Summary' && section.name !== 'Objective';
+  return <div className={`section-toggle ${enabled ? 'enabled' : ''}`}><span className="drag-handle">⠿</span><span className="section-toggle-copy"><b>{section.name}</b><small>{section.benefit}</small></span><div className="section-toggle-actions">{repeatable && <><button type="button" disabled={!enabled} className="section-item-panel-action" title={`Add ${section.name} item`} aria-label={`Add ${section.name} item from section library`} onClick={() => onAddItem(section.name)}><Plus size={11}/></button><button type="button" disabled={!enabled} className="section-item-panel-action" title={`Remove last ${section.name} item`} aria-label={`Remove last ${section.name} item from section library`} onClick={() => onRemoveItem(section.name)}><Trash2 size={10}/></button></>}{directions.map(([direction, Icon, label]) => <button key={direction} type="button" disabled={!enabled} title={`Move ${section.name} ${label}`} aria-label={`Move ${section.name} ${label}`} onClick={() => onMove(section.name, direction)}><Icon size={11}/></button>)}<button aria-label={`${enabled ? 'Hide' : 'Add'} ${section.name}`} className={`tiny-toggle ${enabled ? 'on' : ''}`} onClick={() => onChange(!enabled)}><i /></button></div></div>;
 }
 
 function ColorControl({ label, value, onChange, note }) {
@@ -27,6 +28,7 @@ function ColorControl({ label, value, onChange, note }) {
 
 export default function AdvancedCustomizerPanel({
   open, onClose, tab, setTab, design, onDesignChange, sections, onToggleSection, onMoveSection,
+  onAddSectionItem, onRemoveSectionItem,
   selectedTemplate, layoutChoices, onUploadProfilePhoto, onRemoveProfilePhoto,
   onUploadFont, onAddPage, onAddBlankPage, onAddDifferentPage, pageCount,
   activePage, headerFooter, onToggleHeaderFooter, documentColumns, onCycleColumns,
@@ -86,7 +88,7 @@ export default function AdvancedCustomizerPanel({
         </>}
 
         {tab === 'content' && <>
-          <div className="control-section section-library"><div className="control-title"><span>Section library</span><small>{Object.values(sections).filter(Boolean).length} active · {SECTION_CATALOG.length} total</small></div><p className="control-hint section-move-hint">Move enabled sections up/down or between the left and right columns. On the resume page, use the section arrows or drag handle to place a whole section anywhere.</p><div className="search-field compact-search"><Search size={14}/><input aria-label="Search resume sections" value={sectionSearch} onChange={event => setSectionSearch(event.target.value)} placeholder="Search sections, purpose, or category"/></div><div className="section-results">{filteredSections.map(section => <SectionControl key={section.name} section={section} enabled={Boolean(sections[section.name])} onChange={value => onToggleSection(section.name, value)} onMove={onMoveSection}/>)}</div></div>
+          <div className="control-section section-library"><div className="control-title"><span>Section library</span><small>{Object.values(sections).filter(Boolean).length} active · {SECTION_CATALOG.length} total</small></div><p className="control-hint section-move-hint">Move enabled sections up/down or between columns. Use + or delete here—or hover an item on the resume—to add and remove complete entries. Summary and Objective remain single text fields.</p><div className="search-field compact-search"><Search size={14}/><input aria-label="Search resume sections" value={sectionSearch} onChange={event => setSectionSearch(event.target.value)} placeholder="Search sections, purpose, or category"/></div><div className="section-results">{filteredSections.map(section => <SectionControl key={section.name} section={section} enabled={Boolean(sections[section.name])} onChange={value => onToggleSection(section.name, value)} onMove={onMoveSection} onAddItem={onAddSectionItem} onRemoveItem={onRemoveSectionItem}/>)}</div></div>
           <div className="control-section knowledge-library"><div className="control-title"><span>Resume knowledge base</span><small>{RESUME_KNOWLEDGE.length} research notes</small></div><p className="control-hint">Stored guidance is always available. Optional AI tools live in Career copilot and run only when you request them.</p><div className="search-field compact-search"><Search size={14}/><input aria-label="Search resume knowledge" value={knowledgeSearch} onChange={event => setKnowledgeSearch(event.target.value)} placeholder="Search structure, ATS, pages, content"/></div>{filteredKnowledge.map(item => <article key={item.title}><span>{item.category}</span><strong>{item.title}</strong><p>{item.guidance}</p><a href={item.source} target="_blank" rel="noreferrer">Research source</a></article>)}</div>
         </>}
       </div>

@@ -29,6 +29,10 @@ import {
   moveSectionInDocument
 } from './sectionMovement';
 import {
+  addSectionItem, getSectionItems, isRepeatableSection, normalizeSectionItems,
+  removeSectionItem
+} from './sectionItems';
+import {
   assertRasterHasVisibleContent, buildRasterSvg, collectDocumentCss,
   createExportHost, dataUrlToUint8Array, escapeRtf, waitForExportAssets
 } from './exportEngine';
@@ -728,35 +732,68 @@ export default function App() {
         if (/^\d+$/.test(marker.textContent.trim())) marker.remove();
       });
       section.classList.add('section-reorderable');
-      if (section.querySelector(':scope > [data-editor-ui="section-controls"]')) return;
       const name = getSectionName(section);
-      const toolbar = document.createElement('div');
-      toolbar.className = 'section-move-toolbar';
-      toolbar.dataset.editorUi = 'section-controls';
-      toolbar.contentEditable = 'false';
-      toolbar.setAttribute('role', 'toolbar');
-      toolbar.setAttribute('aria-label', `Move ${name}`);
-      const controls = [
-        ['drag', '⠿', `Drag ${name} anywhere`],
-        ['up', '↑', `Move ${name} up`],
-        ['down', '↓', `Move ${name} down`],
-        ['left', '←', `Move ${name} to left column`],
-        ['right', '→', `Move ${name} to right column`],
-      ];
-      controls.forEach(([action, symbol, label]) => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.textContent = symbol;
-        button.title = label;
-        button.setAttribute('aria-label', label);
-        if (action === 'drag') {
-          button.className = 'section-drag-handle';
-          button.draggable = true;
-          button.dataset.sectionDragHandle = 'true';
-        } else button.dataset.sectionAction = action;
-        toolbar.appendChild(button);
+      let toolbar = section.querySelector(':scope > [data-editor-ui="section-controls"]');
+      if (!toolbar) {
+        toolbar = document.createElement('div');
+        toolbar.className = 'section-move-toolbar';
+        toolbar.dataset.editorUi = 'section-controls';
+        toolbar.contentEditable = 'false';
+        toolbar.setAttribute('role', 'toolbar');
+        toolbar.setAttribute('aria-label', `Edit ${name} section`);
+        const controls = [
+          ['drag', '⠿', `Drag ${name} anywhere`],
+          ['up', '↑', `Move ${name} up`],
+          ['down', '↓', `Move ${name} down`],
+          ['left', '←', `Move ${name} to left column`],
+          ['right', '→', `Move ${name} to right column`],
+        ];
+        controls.forEach(([action, symbol, label]) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.textContent = symbol;
+          button.title = label;
+          button.setAttribute('aria-label', label);
+          if (action === 'drag') {
+            button.className = 'section-drag-handle';
+            button.draggable = true;
+            button.dataset.sectionDragHandle = 'true';
+          } else button.dataset.sectionAction = action;
+          toolbar.appendChild(button);
+        });
+        section.prepend(toolbar);
+      }
+
+      if (!isRepeatableSection(section)) return;
+      normalizeSectionItems(section);
+      const heading = section.querySelector(':scope > .section-heading');
+      if (heading && !heading.querySelector('[data-item-action="add"]')) {
+        const addButton = document.createElement('button');
+        addButton.type = 'button';
+        addButton.textContent = '+';
+        addButton.className = 'section-add-item-button';
+        addButton.dataset.editorUi = 'item-controls';
+        addButton.dataset.itemAction = 'add';
+        addButton.contentEditable = 'false';
+        addButton.title = `Add ${name} item`;
+        addButton.setAttribute('aria-label', `Add ${name} item`);
+        heading.appendChild(addButton);
+      }
+      getSectionItems(section).forEach((item, index) => {
+        item.classList.add('resume-item-editable');
+        item.dataset.itemEditable = 'true';
+        if (item.querySelector(':scope > [data-editor-ui="item-controls"]')) return;
+        const removeButton = document.createElement('button');
+        removeButton.type = 'button';
+        removeButton.textContent = '×';
+        removeButton.className = 'item-remove-button';
+        removeButton.dataset.editorUi = 'item-controls';
+        removeButton.dataset.itemAction = 'remove';
+        removeButton.contentEditable = 'false';
+        removeButton.title = `Remove ${name} item ${index + 1}`;
+        removeButton.setAttribute('aria-label', `Remove ${name} item ${index + 1}`);
+        item.appendChild(removeButton);
       });
-      section.prepend(toolbar);
     });
   };
 
@@ -769,6 +806,23 @@ export default function App() {
     setResumeRevision(value => value + 1);
     setIsSaved(false);
     notify(message);
+  };
+
+  const mutateResumeSectionItem = (name, action, explicitSection = null, explicitItem = null) => {
+    if (!resumeRef.current) return false;
+    const section = explicitSection || [...resumeRef.current.querySelectorAll('.resume-section')]
+      .find(item => item.style.display !== 'none' && getSectionName(item) === name);
+    if (!section || !isRepeatableSection(section)) {
+      notify(`${name} uses a single text field`);
+      return false;
+    }
+    const changed = action === 'add' ? Boolean(addSectionItem(section)) : removeSectionItem(section, explicitItem);
+    if (!changed) {
+      notify(`No ${name} item is available to remove`);
+      return false;
+    }
+    commitSectionMovement(`${name} item ${action === 'add' ? 'added' : 'removed'}`);
+    return true;
   };
 
   const moveResumeSection = (name, direction, explicitSection = null) => {
@@ -789,6 +843,15 @@ export default function App() {
   };
 
   const handleEditorClick = event => {
+    const itemActionButton = event.target.closest?.('[data-item-action]');
+    if (itemActionButton) {
+      event.preventDefault();
+      event.stopPropagation();
+      const section = itemActionButton.closest('.resume-section');
+      const item = itemActionButton.closest('[data-item-editable]');
+      mutateResumeSectionItem(getSectionName(section), itemActionButton.dataset.itemAction, section, item);
+      return;
+    }
     const actionButton = event.target.closest?.('[data-section-action]');
     if (actionButton) {
       event.preventDefault();
@@ -1720,7 +1783,7 @@ export default function App() {
             </div>
           </div>
         </section>
-        <AdvancedCustomizerPanel open={panel === 'customize'} onClose={() => setPanel(null)} tab={tab} setTab={setTab} design={activeDesign} onDesignChange={changeDesign} sections={sections} onToggleSection={toggleResumeSection} onMoveSection={moveResumeSection} selectedTemplate={activeTemplate} layoutChoices={layoutChoices} onUploadProfilePhoto={() => profileImageUploadRef.current?.click()} onRemoveProfilePhoto={removeProfilePhoto} onUploadFont={() => fontUploadRef.current?.click()} onAddPage={addPage} onAddBlankPage={addBlankPage} onAddDifferentPage={addDifferentPage} pageCount={pages.length} activePage={activePage} headerFooter={headerFooter} onToggleHeaderFooter={() => { setHeaderFooter(value => !value); setIsSaved(false); notify(headerFooter ? 'Header and footer hidden' : 'Header and footer added'); }} documentColumns={documentColumns} onCycleColumns={cycleDocumentColumns} onInsertTable={insertEditableTable} onInsertMultilevelList={insertMultilevelList} pageDesignScope={pageDesignScope} onSetPageDesignScope={setPageDesignScope}/>
+        <AdvancedCustomizerPanel open={panel === 'customize'} onClose={() => setPanel(null)} tab={tab} setTab={setTab} design={activeDesign} onDesignChange={changeDesign} sections={sections} onToggleSection={toggleResumeSection} onMoveSection={moveResumeSection} onAddSectionItem={name => mutateResumeSectionItem(name, 'add')} onRemoveSectionItem={name => mutateResumeSectionItem(name, 'remove')} selectedTemplate={activeTemplate} layoutChoices={layoutChoices} onUploadProfilePhoto={() => profileImageUploadRef.current?.click()} onRemoveProfilePhoto={removeProfilePhoto} onUploadFont={() => fontUploadRef.current?.click()} onAddPage={addPage} onAddBlankPage={addBlankPage} onAddDifferentPage={addDifferentPage} pageCount={pages.length} activePage={activePage} headerFooter={headerFooter} onToggleHeaderFooter={() => { setHeaderFooter(value => !value); setIsSaved(false); notify(headerFooter ? 'Header and footer hidden' : 'Header and footer added'); }} documentColumns={documentColumns} onCycleColumns={cycleDocumentColumns} onInsertTable={insertEditableTable} onInsertMultilevelList={insertMultilevelList} pageDesignScope={pageDesignScope} onSetPageDesignScope={setPageDesignScope}/>
       </div>
 
       <AIAssistantPanel open={panel === 'ai'} onClose={() => setPanel(null)} config={aiConfig} onConfigChange={updateAIConfig} connection={aiConnection} onTestConnection={testProvider} onRun={runAIRequest} onApplyResult={applyAIResult} onInsertResult={insertAIResult} onCancel={cancelAIRequest} busy={aiBusy} result={aiResult} error={aiError} resultTask={aiResultTask} onClearResult={() => { setAIResult(null); setAIError(''); }} jobDescription={jobDescription} onJobDescriptionChange={setJobDescription} atsReport={atsReport} canUndoAI={Boolean(aiUndo)} onUndoAI={undoLastAIChange}/>

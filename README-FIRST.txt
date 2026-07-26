@@ -82,11 +82,12 @@ Pages deployment workflow. Developers can run:
   npm test
   npm run dev
 
-The included automated suite contains 7,107 tests, including 5,000 generated import
-integrity/mapping cases and 1,024 combinatorial whole-section movement cases. It also
+The included automated suite contains 7,607 tests, including 5,000 generated import
+integrity/mapping cases, 1,024 combinatorial whole-section movement cases, and 500
+repeatable-section add/remove cases across every section definition and item structure. It also
 covers the reported typing/autosave regression, upload/review/template switching, positive
 and negative workflows, edge cases, provider errors, injection safety, ATS accuracy bounds,
-performance, responsive layouts, seven requested career domains, and all eight export
+performance, responsive layouts, seven requested career domains, and all nine export
 pipelines. QA-MANUAL-IMPORT-5000.xlsx contains 5,000 authored import cases and
 QA-MANUAL-500.csv contains 500 earlier cases; both are ready for independent human sign-off
 and are not marked as executed. Live provider answers still depend on the selected provider, model, supplied
