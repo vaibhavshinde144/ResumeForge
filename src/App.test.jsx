@@ -302,6 +302,43 @@ describe('ResumeForge complete experience', () => {
     expect(saved).not.toContain('data-item-editable');
   });
 
+  it('adds structured and unrestricted project details below each project name', async () => {
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+    await openEditor(user);
+    let projects = [...container.querySelectorAll('.resume-section')].find(section => section.querySelector('h2')?.textContent === 'Projects');
+    expect(projects.querySelectorAll(':scope > .project-entry')).toHaveLength(2);
+    expect(projects).toHaveTextContent('Pulse Insights');
+
+    await user.click(container.querySelector('[aria-label="Add details for Pulse Insights"]'));
+    const projectDetails = [...container.querySelectorAll('.project-entry')].find(entry => entry.textContent.includes('Pulse Insights')).querySelector('.project-details');
+    expect(projectDetails).toHaveTextContent('Roles & responsibilities:');
+    expect(projectDetails).toHaveTextContent('Duration:');
+    expect(projectDetails).toHaveTextContent('Skills & technologies:');
+    projectDetails.innerHTML = '<p><strong>Roles & responsibilities:</strong> Led payment integration and release delivery.</p><p><strong>Duration:</strong> Jan 2024 – Dec 2024</p><p><strong>Skills & technologies:</strong> React, APIs, testing</p><p>Additional unrestricted project detail.</p>';
+    fireEvent.input(projectDetails);
+    expect(projects).toHaveTextContent('Led payment integration and release delivery');
+
+    await user.click(container.querySelector('[aria-label="Add Projects item"]'));
+    await waitFor(() => {
+      projects = [...container.querySelectorAll('.resume-section')].find(section => section.querySelector('h2')?.textContent === 'Projects');
+      expect(projects.querySelectorAll(':scope > .project-entry')).toHaveLength(3);
+      expect(projects.querySelectorAll(':scope > .project-entry')[2]).toHaveTextContent('New project');
+      expect(projects.querySelectorAll(':scope > .project-entry')[2]).toHaveTextContent('Skills & technologies:');
+    });
+    await user.click(container.querySelector('[aria-label="Remove Projects item 3"]'));
+    await waitFor(() => {
+      projects = [...container.querySelectorAll('.resume-section')].find(section => section.querySelector('h2')?.textContent === 'Projects');
+      expect(projects.querySelectorAll(':scope > .project-entry')).toHaveLength(2);
+    });
+
+    await user.click(screen.getByRole('button', { name: /^Save$/ }));
+    const saved = window.localStorage.getItem('resumeforge-saves');
+    expect(saved).toContain('Led payment integration and release delivery');
+    expect(saved).not.toContain('project-details-button');
+    expect(saved).not.toContain('data-project-action');
+  });
+
   it('provides the font universe, exact type controls, and 36 list systems', async () => {
     const user = userEvent.setup();
     const { container } = render(<App />);

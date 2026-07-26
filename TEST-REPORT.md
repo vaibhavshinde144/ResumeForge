@@ -1,19 +1,19 @@
-# ResumeForge v12 repeatable-entry verification report
+# ResumeForge v13 project-details verification report
 
 Date: 26 July 2026 (Asia/Kolkata)
 
 ## Result
 
-- Automated tests: **7,607 passed, 0 failed** across 7 test files
+- Automated tests: **7,612 passed, 0 failed** across 7 test files
 - Dedicated import integrity matrix: **5,038 passed** (5,000 generated content/mapping cases + 38 format, heading, edge, security, rendering, and integrity checks)
 - Dedicated section-movement matrix: **1,027 passed** (1,024 combinations + 3 boundary/drop/sanitization cases)
-- Dedicated repeatable-section-item matrix: **500 passed** across all 60 section definitions and ten item structures
+- Dedicated repeatable-section-item coverage: **504 passed** (500-case matrix across all 60 section definitions and ten item structures + 4 focused project cases)
 - Dedicated export matrix: **1,000 passed** across every offered format, 40 template families, 25 resume-data profiles, 1-5 pages, and high/ultra quality
 - Manual QA catalogues: **5,500 authored cases** (5,000 import-focused XLSX + 500 legacy CSV), ready for independent human sign-off
 - Production build: **passed**
 - Production dependency audit: **0 known vulnerabilities**
-- Output: self-contained `dist/index.html`, 6,972,280 bytes
-- SHA-256: `96DFF41D930164A6C4C3E4D76B3668B1B051950C1FF30FBFF1DDD61C9A06C625`
+- Output: self-contained `dist/index.html`, 6,976,234 bytes
+- SHA-256: `ABE5D532661BED20930AE2CF41D4E982C80DF366F128884728B5C4BA23DB1AB9`
 - External scripts in built HTML: **0**
 - External stylesheets in built HTML: **0**
 
@@ -45,7 +45,13 @@ Persistence protection: editor toolbars, drag state, and drop indicators are rem
 
 Every section except Summary and Objective now supports add and remove operations. Users can add a complete structured entry from the circular `+` beside a section heading or from the Content library. They can remove one precise entry on the resume or remove the last entry from Content. Experience clones a complete role/employer/date/achievement structure; projects, education, certifications, skills, languages, list items, imported/custom sections, and other structures retain their appropriate editable shape.
 
-Data protection: adding an entry never changes existing entries. Removing an entry targets only that item. Empty sections can be repopulated, editor controls are excluded from saved drafts and every export, and Summary/Objective expose no item controls. The exact 500-case matrix plus component and Chromium workflows passed. The Chromium gate exercised desktop and mobile add/edit/remove, Content-panel actions, saved-data cleanup, and console monitoring with **16/16 checks and 0 browser errors**.
+Data protection: adding an entry never changes existing entries. Removing an entry targets only that item. Empty sections can be repopulated, editor controls are excluded from saved drafts and every export, and Summary/Objective expose no item controls. The exact 500-case matrix plus component and Chromium workflows passed. The Chromium gate exercised desktop and mobile add/edit/remove, project-detail editing, Content-panel actions, saved-data cleanup, export cleanup, and console monitoring with **28/28 checks and 0 browser errors**.
+
+## Project details request
+
+Existing project rows are migrated in place into complete project entries without changing project names, metadata, or previously written descriptions. Each project exposes **Add project details** beneath its name. The resulting multiline editable area includes roles and responsibilities, duration, skills and technologies, plus an unrestricted line for outcomes, links, client/team context, or any other information. Pressing Enter adds further free-text lines naturally.
+
+New projects receive this full detail structure automatically. Removing a project removes its name, metadata, and all nested details as one unit. Save/export serialization retains the user content and strips every project editor button. Focused unit/integration tests and the desktop/mobile Chromium gate passed; the latter completed **28/28 checks with 0 browser errors** and reopened the exported HTML to verify the custom details were present without editor controls.
 
 ## Export fidelity defect
 
@@ -65,6 +71,7 @@ Real-browser artifact gate: headless Chromium downloaded all nine choices plus o
 | Editing | Continuous typing, caret retention, idle analysis, autosave persistence, formatting controls |
 | Section movement | Customizer arrows, page arrows, exact drag/drop, cross-column moves, boundaries, content integrity, save/export cleanup |
 | Section entries | Add/remove on page and in Content, jobs, skills, structured/generic/list items, empty recovery, Summary/Objective exclusions, persistence cleanup |
+| Project details | Lossless row migration, roles/responsibilities, duration, skills/technologies, unrestricted multiline text, complete add/remove, save/export cleanup |
 | Resume import | Home/editor upload, format detection, TXT integration, line accounting, fingerprints, heading aliases, deterministic mapping, source/editable modes, template-change retention |
 | Import safety | Size/text/page limits, unsupported/legacy format handling, hostile HTML removal, markup escaping, OCR warnings, no-AI import behavior |
 | Templates | 40,320 generated designs, 48 groups, pagination, filters, structurally different layouts |
@@ -76,7 +83,7 @@ Real-browser artifact gate: headless Chromium downloaded all nine choices plus o
 | ATS | Explainable bounded score, keyword matching/missing terms, complete-vs-incomplete accuracy comparison |
 | Exports | Exact PDF/Word/PNG/JPG/HTML/SVG; editable Word/TXT/RTF; nonblank pixel gate; multi-page PDF/Word; multi-page image ZIP |
 | Responsive | Desktop, 1150 px, 820 px, 500 px, mobile drawers/dock, and print layout rules |
-| Performance | Complete 7,607-test regression completed in 94.40 seconds; final real-browser 14-artifact export run completed in 20.3 seconds; item-interaction browser gate completed in 13.6 seconds |
+| Performance | Complete 7,612-test regression completed in 279.32 seconds on the local Windows host; real-browser 14-artifact export run completed in 79.2 seconds; 28-check item/project browser gate completed in 9.3 seconds |
 
 ## Requested AI career scenarios
 
@@ -99,7 +106,7 @@ Each scenario checks that supplied facts remain in the structured resume and pro
 - No OCR engine can guarantee 100% recognition across arbitrary scans, handwriting, languages, rotations, compression, or damage. ResumeForge preserves the source visual when available and requires verification. Editable reconstruction is not the same guarantee as pixel-identical source rendering.
 - DOCX import is semantic, not pixel-identical. Complex Word pagination, floating shapes, fields, and text boxes require a native Word/LibreOffice rendering or conversion service for closer fidelity.
 - The desktop app's interactive browser-control connection could not initialize during this run. A real headless Chromium session completed the download/artifact gate; this report does not mislabel that automation as a human manual session.
-- The 5,000 import cases in `QA-MANUAL-IMPORT-5000.xlsx` and 500 legacy cases in `QA-MANUAL-500.csv` are authored and ready; they are not falsely marked as executed. Human sign-off across physical devices, sample files, Word/PDF viewers, languages, and OCR conditions remains separate from the 7,607 passing automated checks.
+- The 5,000 import cases in `QA-MANUAL-IMPORT-5000.xlsx` and 500 legacy cases in `QA-MANUAL-500.csv` are authored and ready; they are not falsely marked as executed. Human sign-off across physical devices, sample files, Word/PDF viewers, languages, and OCR conditions remains separate from the 7,612 passing automated checks.
 - The ATS score is a local heuristic, not an employer or vendor score and not a guarantee of selection.
 
 ## Reproduce

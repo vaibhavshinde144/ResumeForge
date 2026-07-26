@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { SECTION_CATALOG } from './customizationData';
 import {
-  addSectionItem, getRepeatableSectionName, getSectionItems, isRepeatableSection,
-  normalizeSectionItems, removeSectionItem
+  addSectionItem, ensureProjectDetails, getRepeatableSectionName, getSectionItems,
+  isRepeatableSection, normalizeProjectEntries, normalizeSectionItems, removeSectionItem
 } from './sectionItems';
 
 const structures = [
@@ -70,6 +70,50 @@ describe('repeatable section item matrix — 500 cases', () => {
       expect(restored).not.toBeNull();
       expect(getSectionItems(section)).toHaveLength(1);
     }
+    section.remove();
+  });
+});
+
+describe('structured project details', () => {
+  it('migrates existing project rows without changing their text', () => {
+    const section = createSection('Projects', '<div class="project-row" contenteditable="true"><strong>Payments Hub</strong><span>Lead · 2025</span></div><div class="project-row" contenteditable="true"><strong>Risk Engine</strong><span>QA · 2024</span></div>');
+    const originalText = section.textContent;
+    const entries = normalizeProjectEntries(section);
+    expect(entries).toHaveLength(2);
+    expect(section.textContent).toBe(originalText);
+    expect(entries[0]).toHaveTextContent('Payments Hub');
+    expect(entries[1]).toHaveTextContent('Risk Engine');
+    section.remove();
+  });
+
+  it('preserves an existing free-text project description inside the project entry', () => {
+    const section = createSection('Projects', '<div class="project-row" contenteditable="true"><strong>Trade Portal</strong><span>Developer · 2023</span></div><p contenteditable="true">Built SWIFT validation and release controls.</p>');
+    const [entry] = normalizeProjectEntries(section);
+    expect(entry.querySelector('.project-details')).toHaveTextContent('Built SWIFT validation and release controls.');
+    expect(entry.querySelector('.project-details')).toHaveAttribute('contenteditable', 'true');
+    section.remove();
+  });
+
+  it('adds editable role, duration, technology, and unrestricted free-text prompts', () => {
+    const section = createSection('Projects', '<div class="project-row" contenteditable="true"><strong>Cheque Clearing</strong><span>Analyst · 2025</span></div>');
+    const [entry] = normalizeProjectEntries(section);
+    const details = ensureProjectDetails(entry);
+    expect(details).toHaveTextContent('Roles & responsibilities:');
+    expect(details).toHaveTextContent('Duration:');
+    expect(details).toHaveTextContent('Skills & technologies:');
+    expect(details).toHaveTextContent('Press Enter for another line.');
+    section.remove();
+  });
+
+  it('creates and removes a complete new project together with all details', () => {
+    const section = createSection('Projects', '<div class="project-row" contenteditable="true"><strong>Existing Project</strong><span>Owner · 2024</span></div>');
+    const added = addSectionItem(section);
+    expect(getSectionItems(section)).toHaveLength(2);
+    expect(added).toHaveTextContent('New project');
+    expect(added).toHaveTextContent('Roles & responsibilities:');
+    expect(removeSectionItem(section, added)).toBe(true);
+    expect(getSectionItems(section)).toHaveLength(1);
+    expect(section).toHaveTextContent('Existing Project');
     section.remove();
   });
 });
