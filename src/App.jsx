@@ -28,6 +28,10 @@ import {
   cleanEditorMarkup, dropSectionAt, dropSectionInColumn, getSectionName,
   moveSectionInDocument
 } from './sectionMovement';
+import {
+  assertRasterHasVisibleContent, buildRasterSvg, collectDocumentCss,
+  createExportHost, dataUrlToUint8Array, escapeRtf, waitForExportAssets
+} from './exportEngine';
 
 const ACCENTS = ['#bd4f2f', '#087e6b', '#2563a6', '#6b4ba1', '#a16810', '#292d32', '#8e4054', '#315b51', '#34516f', '#72544b', '#526b2f', '#4d5564'];
 const FONTS = FONT_CATALOG;
@@ -437,16 +441,18 @@ function ExportModal({ onClose, onExport, exporting }) {
   const [format, setFormat] = useState('pdf');
   const [quality, setQuality] = useState('ultra');
   const formats = [
-    { id: 'pdf', label: 'PDF', detail: 'Best for applications', icon: FileText },
-    { id: 'docx', label: 'Word', detail: 'Fully editable .docx', icon: File },
-    { id: 'png', label: 'PNG', detail: 'Lossless image', icon: FileImage },
-    { id: 'jpg', label: 'JPG', detail: 'High-quality image', icon: ImageIcon },
-    { id: 'html', label: 'HTML', detail: 'Web document', icon: FileStack },
+    { id: 'pdf', label: 'PDF', detail: 'Exact visual, all pages', icon: FileText },
+    { id: 'docx', label: 'Word (exact)', detail: 'Pixel-perfect visual .docx', icon: File },
+    { id: 'docx-editable', label: 'Word (editable)', detail: 'Editable text, simplified layout', icon: File },
+    { id: 'png', label: 'PNG', detail: 'Lossless exact image', icon: FileImage },
+    { id: 'jpg', label: 'JPG', detail: 'High-quality exact image', icon: ImageIcon },
+    { id: 'html', label: 'HTML', detail: 'Exact browser document', icon: FileStack },
     { id: 'txt', label: 'Text', detail: 'Plain-text ATS copy', icon: FileText },
-    { id: 'rtf', label: 'RTF', detail: 'Universal rich text', icon: FileText },
-    { id: 'svg', label: 'SVG', detail: 'Scalable vector image', icon: FileImage },
+    { id: 'rtf', label: 'RTF', detail: 'Editable universal text', icon: FileText },
+    { id: 'svg', label: 'SVG', detail: 'Exact visual image', icon: FileImage },
   ];
-  return <div className="modal-backdrop" onMouseDown={e => e.target === e.currentTarget && onClose()}><div className="export-modal" role="dialog" aria-modal="true"><div className="modal-head"><div><span className="panel-kicker">EXPORT STUDIO</span><h2>Finish your resume</h2><p>Choose a format. Your typography and layout stay crisp.</p></div><button onClick={onClose}><X size={20}/></button></div><div className="format-grid">{formats.map(({ id, label, detail, icon: Icon }) => <button key={id} className={format === id ? 'active' : ''} onClick={() => setFormat(id)}><Icon size={20}/><span><strong>{label}</strong><small>{detail}</small></span>{format === id && <Check size={15}/>}</button>)}</div>{['pdf','png','jpg'].includes(format) && <label className="quality-select"><span><strong>Render quality</strong><small>Higher quality creates a larger file.</small></span><select value={quality} onChange={e => setQuality(e.target.value)}><option value="high">High · 2×</option><option value="ultra">Ultra · 4×</option></select></label>}<div className="export-note"><Check size={15}/><span>ATS-safe text, embedded fonts, and print-ready spacing</span></div><div className="modal-actions"><button className="secondary-button" onClick={onClose}>Cancel</button><button className="primary-button" onClick={() => onExport(format, quality)} disabled={exporting}>{exporting ? <LoaderCircle className="spin" size={17}/> : <Download size={17}/>} {exporting ? 'Preparing…' : `Export ${format.toUpperCase()}`}</button></div></div></div>;
+  const exactVisual = ['pdf', 'docx', 'png', 'jpg', 'html', 'svg'].includes(format);
+  return <div className="modal-backdrop" onMouseDown={e => e.target === e.currentTarget && onClose()}><div className="export-modal" role="dialog" aria-modal="true"><div className="modal-head"><div><span className="panel-kicker">EXPORT STUDIO</span><h2>Finish your resume</h2><p>Exact visual formats use the same rendered page shown in the editor.</p></div><button onClick={onClose}><X size={20}/></button></div><div className="format-grid">{formats.map(({ id, label, detail, icon: Icon }) => <button key={id} className={format === id ? 'active' : ''} onClick={() => setFormat(id)}><Icon size={20}/><span><strong>{label}</strong><small>{detail}</small></span>{format === id && <Check size={15}/>}</button>)}</div>{['pdf','docx','png','jpg','svg'].includes(format) && <label className="quality-select"><span><strong>Render quality</strong><small>Higher quality creates a larger file.</small></span><select value={quality} onChange={e => setQuality(e.target.value)}><option value="high">High · 2×</option><option value="ultra">Ultra · 4×</option></select></label>}<div className={`export-note ${exactVisual ? '' : 'is-semantic'}`}><Check size={15}/><span>{exactVisual ? 'Exact visual export: design, alignment, colors, photos, and page geometry are preserved.' : 'Editable/ATS text formats preserve content; their file standards cannot preserve arbitrary web layouts.'}</span></div><div className="modal-actions"><button className="secondary-button" onClick={onClose}>Cancel</button><button className="primary-button" onClick={() => onExport(format, quality)} disabled={exporting}>{exporting ? <LoaderCircle className="spin" size={17}/> : <Download size={17}/>} {exporting ? 'Preparing…' : `Export ${format.toUpperCase()}`}</button></div></div></div>;
 }
 
 function SavedModal({ saves, onClose, onLoad, onDelete, onNew }) {
@@ -1438,7 +1444,10 @@ export default function App() {
     const exportPages = snapshotPages();
     setPages(exportPages);
     persistPageDraft(exportPages);
-    const filename = 'Ananya-Rao-Resume';
+    const nameHolder = document.createElement('div');
+    nameHolder.innerHTML = exportPages[0] || '';
+    const resumeName = nameHolder.querySelector('h1')?.textContent?.trim() || 'Professional-Resume';
+    const filename = `${resumeName.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'Professional'}-Resume`;
     const plainPages = exportPages.map(markup => {
       const holder = document.createElement('div');
       holder.innerHTML = markup;
@@ -1447,80 +1456,138 @@ export default function App() {
     });
     const plainText = plainPages.join('\n\n--- PAGE BREAK ---\n\n');
     const inlineDesignStyle = pageIndex => Object.entries(designStyleForPage(pageIndex)).map(([key, value]) => `${key}:${value}`).join(';');
-    const createExportPage = (markup, pageIndex) => {
-      const paper = PAPER_SIZES.find(size => size.id === resolvePageDesign(pageIndex).paperSize) || PAPER_SIZES[0];
-      const node = document.createElement('article');
-      node.className = designClassForPage(pageIndex);
-      node.dataset.pageNumber = String(pageIndex + 1);
-      node.dataset.pageCount = String(exportPages.length);
-      node.dataset.runningHeader = 'Ananya Rao · Resume';
-      Object.assign(node.style, { position: 'fixed', left: '-10000px', top: '0', transform: 'none', width: `${paper.widthPx}px`, minHeight: `${paper.heightPx}px`, zIndex: '-1' });
-      Object.entries(designStyleForPage(pageIndex)).forEach(([key, value]) => node.style.setProperty(key, String(value)));
-      node.innerHTML = markup;
-      document.body.appendChild(node);
-      return node;
+    const renderVisualPages = async rasterFormat => {
+      const { toJpeg, toPng } = await import('html-to-image');
+      const pixelRatio = quality === 'ultra' ? 4 : 2;
+      const rendered = [];
+      for (let pageIndex = 0; pageIndex < exportPages.length; pageIndex += 1) {
+        const pageDesign = resolvePageDesign(pageIndex);
+        const paper = PAPER_SIZES.find(size => size.id === pageDesign.paperSize) || PAPER_SIZES[0];
+        const { host, node } = createExportHost({
+          className: designClassForPage(pageIndex),
+          style: designStyleForPage(pageIndex),
+          markup: exportPages[pageIndex],
+          paper,
+          pageIndex,
+          pageCount: exportPages.length,
+          runningHeader: `${resumeName} · Resume`,
+        });
+        try {
+          await waitForExportAssets(node);
+          const options = {
+            pixelRatio,
+            backgroundColor: pageDesign.pageBackground,
+            cacheBust: true,
+            width: paper.widthPx,
+            height: paper.heightPx,
+            skipAutoScale: false,
+            filter: candidate => !candidate?.dataset?.editorUi,
+            style: {
+              position: 'relative',
+              left: '0',
+              top: '0',
+              margin: '0',
+              transform: 'none',
+              transformOrigin: 'top left',
+            },
+          };
+          const dataUrl = rasterFormat === 'jpg'
+            ? await toJpeg(node, { ...options, quality: 0.98 })
+            : await toPng(node, options);
+          await assertRasterHasVisibleContent(dataUrl, Boolean(plainPages[pageIndex].trim()));
+          rendered.push({ dataUrl, paper, pageIndex, pixelRatio, mime: rasterFormat === 'jpg' ? 'image/jpeg' : 'image/png' });
+        } finally {
+          host.remove();
+        }
+      }
+      return rendered;
+    };
+    const downloadRasterPages = async (renderedPages, extension) => {
+      if (renderedPages.length === 1) {
+        const link = document.createElement('a');
+        link.download = `${filename}.${extension}`;
+        link.href = renderedPages[0].dataUrl;
+        link.click();
+        return;
+      }
+      const zipModule = await import('jszip');
+      const zip = new zipModule.default();
+      renderedPages.forEach(({ dataUrl }, pageIndex) => zip.file(`${filename}-page-${pageIndex + 1}.${extension}`, dataUrlToUint8Array(dataUrl)));
+      downloadBlob(await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } }), `${filename}-${extension.toUpperCase()}-pages.zip`);
     };
     try {
-      if (format === 'png' || format === 'jpg' || format === 'pdf') {
-        const { toJpeg, toPng } = await import('html-to-image');
-        const pixelRatio = quality === 'ultra' ? 4 : 2;
-        const pdfModule = format === 'pdf' ? await import('jspdf') : null;
+      if (format === 'png' || format === 'jpg') {
+        await downloadRasterPages(await renderVisualPages(format), format);
+      } else if (format === 'pdf') {
+        const renderedPages = await renderVisualPages('png');
+        const pdfModule = await import('jspdf');
         const firstPaper = PAPER_SIZES.find(size => size.id === resolvePageDesign(0).paperSize) || PAPER_SIZES[0];
-        const pdf = pdfModule ? new pdfModule.jsPDF({ orientation: 'portrait', unit: 'mm', format: [firstPaper.widthMm, firstPaper.heightMm], compress: true }) : null;
-        for (let pageIndex = 0; pageIndex < exportPages.length; pageIndex += 1) {
-          const pageDesign = resolvePageDesign(pageIndex);
-          const paper = PAPER_SIZES.find(size => size.id === pageDesign.paperSize) || PAPER_SIZES[0];
-          const options = { pixelRatio, backgroundColor: pageDesign.pageBackground, cacheBust: true, width: paper.widthPx, height: paper.heightPx, style: { transform: 'none', transformOrigin: 'top left' } };
-          const pageNode = createExportPage(exportPages[pageIndex], pageIndex);
-          try {
-            const dataUrl = format === 'jpg' ? await toJpeg(pageNode, { ...options, quality: 0.98 }) : await toPng(pageNode, options);
-            if (pdf) {
-              if (pageIndex > 0) pdf.addPage([paper.widthMm, paper.heightMm], 'portrait');
-              pdf.addImage(dataUrl, format === 'jpg' ? 'JPEG' : 'PNG', 0, 0, paper.widthMm, paper.heightMm, undefined, 'FAST');
-            } else {
-              const suffix = exportPages.length > 1 ? `-page-${pageIndex + 1}` : '';
-              const link = document.createElement('a'); link.download = `${filename}${suffix}.${format}`; link.href = dataUrl; link.click();
-            }
-          } finally { pageNode.remove(); }
-        }
-        if (pdf) pdf.save(`${filename}.pdf`);
+        const pdf = new pdfModule.jsPDF({ orientation: firstPaper.widthMm > firstPaper.heightMm ? 'landscape' : 'portrait', unit: 'mm', format: [firstPaper.widthMm, firstPaper.heightMm], compress: true });
+        renderedPages.forEach(({ dataUrl, paper }, pageIndex) => {
+          if (pageIndex > 0) pdf.addPage([paper.widthMm, paper.heightMm], paper.widthMm > paper.heightMm ? 'landscape' : 'portrait');
+          pdf.addImage(dataUrl, 'PNG', 0, 0, paper.widthMm, paper.heightMm, undefined, 'FAST');
+        });
+        pdf.save(`${filename}.pdf`);
       } else if (format === 'html') {
-        const styles = [...document.styleSheets].map(sheet => { try { return [...sheet.cssRules].map(rule => rule.cssText).join('\n'); } catch { return ''; } }).join('\n');
-        const pageHtml = exportPages.map((markup, pageIndex) => `<article class="${designClassForPage(pageIndex)}" data-page-number="${pageIndex + 1}" data-page-count="${exportPages.length}" data-running-header="Ananya Rao · Resume" style="${inlineDesignStyle(pageIndex)};transform:none">${markup}</article>`).join('\n');
-        const html = `<!doctype html><html><head><meta charset="utf-8"><title>${filename}</title><style>${styles}body{overflow:auto;background:#ddd}.resume-page{margin:20px auto}</style></head><body>${pageHtml}</body></html>`;
+        const styles = collectDocumentCss();
+        const pageHtml = exportPages.map((markup, pageIndex) => `<article class="${designClassForPage(pageIndex)}" data-page-number="${pageIndex + 1}" data-page-count="${exportPages.length}" data-running-header="${resumeName} · Resume" style="${inlineDesignStyle(pageIndex)};position:relative;left:0;top:0;transform:none">${markup}</article>`).join('\n');
+        const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${filename}</title><style>${styles}html,body{margin:0;min-height:100%;background:#ddd}body{overflow:auto;padding:20px}.resume-page{margin:0 auto 20px;transform:none!important}@media print{body{padding:0;background:#fff}.resume-page{margin:0;break-after:page}}</style></head><body>${pageHtml}</body></html>`;
         downloadBlob(new Blob([html], { type: 'text/html' }), `${filename}.html`);
       } else if (format === 'txt') {
         downloadBlob(new Blob([plainText], { type: 'text/plain' }), `${filename}.txt`);
       } else if (format === 'rtf') {
-        const escapedPages = plainPages.map(page => page.replace(/\\/g, '\\\\').replace(/[{}]/g, '\\$&').replace(/\n/g, '\\par\n'));
+        const escapedPages = plainPages.map(escapeRtf);
         downloadBlob(new Blob([`{\\rtf1\\ansi\\deff0{\\fonttbl{\\f0 Arial;}}\\fs22 ${escapedPages.join('\\page\n')}}`], { type: 'application/rtf' }), `${filename}.rtf`);
       } else if (format === 'svg') {
-        const styles = [...document.styleSheets].map(sheet => { try { return [...sheet.cssRules].map(rule => rule.cssText).join('\n'); } catch { return ''; } }).join('\n');
-        let verticalOffset = 0;
-        let maximumWidth = 0;
-        const svgPages = exportPages.map((markup, pageIndex) => {
-          const paper = PAPER_SIZES.find(size => size.id === resolvePageDesign(pageIndex).paperSize) || PAPER_SIZES[0];
-          const page = `<foreignObject x="0" y="${verticalOffset}" width="${paper.widthPx}" height="${paper.heightPx}"><div xmlns="http://www.w3.org/1999/xhtml"><style>${styles}</style><article class="${designClassForPage(pageIndex)}" data-page-number="${pageIndex + 1}" data-page-count="${exportPages.length}" data-running-header="Ananya Rao · Resume" style="${inlineDesignStyle(pageIndex)};transform:none">${markup}</article></div></foreignObject>`;
-          verticalOffset += paper.heightPx;
-          maximumWidth = Math.max(maximumWidth, paper.widthPx);
-          return page;
-        }).join('');
-        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${maximumWidth}" height="${verticalOffset}" viewBox="0 0 ${maximumWidth} ${verticalOffset}">${svgPages}</svg>`;
-        downloadBlob(new Blob([svg], { type: 'image/svg+xml' }), `${filename}.svg`);
+        downloadBlob(new Blob([buildRasterSvg(await renderVisualPages('png'))], { type: 'image/svg+xml' }), `${filename}.svg`);
       } else if (format === 'docx') {
+        const renderedPages = await renderVisualPages('png');
+        const {
+          Document, HorizontalPositionRelativeFrom, ImageRun, Packer, Paragraph,
+          SectionType, TextWrappingType, VerticalPositionRelativeFrom
+        } = await import('docx');
+        const sectionsForWord = renderedPages.map(({ dataUrl, paper }, pageIndex) => ({
+          properties: {
+            ...(pageIndex > 0 ? { type: SectionType.NEXT_PAGE } : {}),
+            page: {
+              size: { width: Math.round(paper.widthMm / 25.4 * 1440), height: Math.round(paper.heightMm / 25.4 * 1440) },
+              margin: { top: 0, right: 0, bottom: 0, left: 0, header: 0, footer: 0, gutter: 0 },
+            },
+          },
+          children: [new Paragraph({
+            spacing: { before: 0, after: 0, line: 1 },
+            children: [new ImageRun({
+              type: 'png',
+              data: dataUrlToUint8Array(dataUrl),
+              transformation: { width: paper.widthPx, height: paper.heightPx },
+              altText: { title: `${resumeName} resume page ${pageIndex + 1}`, description: 'Exact visual export from ResumeForge', name: `${filename}-page-${pageIndex + 1}` },
+              floating: {
+                horizontalPosition: { relative: HorizontalPositionRelativeFrom.PAGE, offset: 0 },
+                verticalPosition: { relative: VerticalPositionRelativeFrom.PAGE, offset: 0 },
+                wrap: { type: TextWrappingType.NONE },
+                behindDocument: false,
+                allowOverlap: true,
+                layoutInCell: false,
+              },
+            })],
+          })],
+        }));
+        const doc = new Document({ creator: 'ResumeForge', title: `${resumeName} Resume`, description: 'Exact visual resume export', sections: sectionsForWord });
+        downloadBlob(await Packer.toBlob(doc), `${filename}.docx`);
+      } else if (format === 'docx-editable') {
         const { Document, Packer, Paragraph, TextRun, HeadingLevel } = await import('docx');
         const children = plainPages.flatMap((pageText, pageIndex) => {
           const pageDesign = resolvePageDesign(pageIndex);
           return pageText.split('\n').map(line => line.trim()).filter(Boolean).map((line, lineIndex) => new Paragraph({ pageBreakBefore: pageIndex > 0 && lineIndex === 0, heading: lineIndex === 0 ? HeadingLevel.TITLE : (SECTION_LABELS.includes(line) ? HeadingLevel.HEADING_2 : undefined), children: [new TextRun({ text: line, bold: lineIndex === 0, color: (lineIndex === 0 ? pageDesign.headingColor : pageDesign.textColor).replace('#',''), size: lineIndex === 0 ? Math.round(pageDesign.baseFontSize * 3.4) : Math.round(pageDesign.baseFontSize * 2), font: lineIndex === 0 ? pageDesign.headingFont : pageDesign.font })], spacing: { after: lineIndex === 0 ? 180 : Math.round(pageDesign.paragraphSpacing * 10) } }));
         });
-        const doc = new Document({ sections: [{ properties: { page: { margin: { top: 720, right: 720, bottom: 720, left: 720 } } }, children }] });
-        downloadBlob(await Packer.toBlob(doc), `${filename}.docx`);
+        const doc = new Document({ creator: 'ResumeForge', title: `${resumeName} Resume - editable`, sections: [{ properties: { page: { margin: { top: 720, right: 720, bottom: 720, left: 720 } } }, children }] });
+        downloadBlob(await Packer.toBlob(doc), `${filename}-editable.docx`);
       }
-      notify(`${format.toUpperCase()} exported successfully`);
+      notify(`${format === 'docx-editable' ? 'Editable Word' : format.toUpperCase()} exported successfully`);
       setExportOpen(false);
     } catch (error) {
       console.error(error);
-      notify('Export could not be completed. Please try again.');
+      notify(error?.message || 'Export could not be completed. Please try again.');
     } finally { setExporting(false); }
   };
 
